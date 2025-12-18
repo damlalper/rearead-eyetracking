@@ -1,0 +1,9 @@
+# EyeTrax (editable install)
+  -e ../../eyetrax
+
+  # WebSocket server
+  websockets>=12.0
+
+  # System tray (optional - sonra ekle)
+  # pystray>=0.19
+  # pillow>=10.0
