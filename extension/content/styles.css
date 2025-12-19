@@ -1,0 +1,24 @@
+/* ReaRead Content Script Styles */
+
+#rearead-gaze-cursor {
+  /* Gaze cursor styling is handled in JavaScript */
+  /* This file is for any additional page-level styles */
+}
+
+/* Optional: Highlight elements being gazed at */
+.rearead-gaze-focus {
+  outline: 2px solid rgba(0, 255, 0, 0.5);
+  outline-offset: 2px;
+}
+
+/* Heatmap overlay (for future implementation) */
+#rearead-heatmap-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 999998;
+  display: none;
+}

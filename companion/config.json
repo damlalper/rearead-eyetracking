@@ -1,0 +1,22 @@
+{
+  "websocket": {
+    "host": "localhost",
+    "port": 8765,
+    "max_connections": 5,
+    "heartbeat_interval": 30
+  },
+  "eyetrax": {
+    "camera_id": 0,
+    "confidence_threshold": 0.7,
+    "stream_frequency": 30
+  },
+  "calibration": {
+    "points": 9,
+    "duration_per_point": 2,
+    "validation_threshold": 0.85
+  },
+  "logging": {
+    "level": "DEBUG",
+    "file": "companion.log"
+  }
+}

@@ -1,0 +1,4 @@
+[console_scripts]
+eyetrax-build-model = eyetrax.app.build_model:main
+eyetrax-demo = eyetrax.app.demo:run_demo
+eyetrax-virtualcam = eyetrax.app.virtualcam:run_virtualcam

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReaRead</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ReaRead</h1>
+      <p class="subtitle">Eye-Tracking Reading Analysis</p>
+    </header>
+
+    <section class="status-section">
+      <div class="status-item">
+        <span class="label">Connection Status:</span>
+        <span id="connection-status" class="status-value disconnected">Disconnected</span>
+      </div>
+      <div class="status-indicator">
+        <div id="status-dot" class="status-dot disconnected"></div>
+        <span id="status-text">Waiting for companion app...</span>
+      </div>
+    </section>
+
+    <section class="controls-section">
+      <button id="btn-reconnect" class="btn btn-primary">
+        <span>Reconnect</span>
+      </button>
+
+      <button id="btn-calibrate" class="btn btn-secondary" disabled>
+        <span>Start Calibration</span>
+      </button>
+
+      <div class="toggle-control">
+        <label for="toggle-visualization">Show Gaze Cursor</label>
+        <input type="checkbox" id="toggle-visualization" checked>
+      </div>
+    </section>
+
+    <section class="info-section">
+      <div class="info-item">
+        <span class="info-label">Companion App:</span>
+        <span class="info-value">localhost:8765</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Version:</span>
+        <span class="info-value">0.1.0</span>
+      </div>
+    </section>
+
+    <footer>
+      <p class="help-text">
+        Make sure the companion app is running before using ReaRead.
+      </p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
