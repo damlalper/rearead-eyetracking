@@ -5,7 +5,9 @@ console.log('ReaRead content script loaded');
 
 // Gaze cursor element
 let gazeCursor = null;
+let debugPanel = null;
 let isVisualizationEnabled = true;
+let isDebugPanelEnabled = true;
 
 // Initialize gaze visualization
 function initializeGazeVisualization() {
@@ -28,6 +30,35 @@ function initializeGazeVisualization() {
 
   document.body.appendChild(gazeCursor);
   console.log('Gaze cursor initialized');
+
+  // Create debug panel
+  debugPanel = document.createElement('div');
+  debugPanel.id = 'rearead-debug-panel';
+  debugPanel.style.cssText = `
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 2px solid rgba(0, 255, 0, 0.3);
+    z-index: 999998;
+    min-width: 280px;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  `;
+  debugPanel.innerHTML = `
+    <div style="margin-bottom: 8px; font-weight: bold; color: #00ffff; border-bottom: 1px solid rgba(0, 255, 0, 0.3); padding-bottom: 5px;">
+      ReaRead - Debug Info
+    </div>
+    <div id="rearead-debug-content">Waiting for data...</div>
+  `;
+
+  document.body.appendChild(debugPanel);
+  console.log('Debug panel initialized');
 }
 
 // Coordinate transformation: Screen → Viewport → Page
@@ -76,38 +107,60 @@ const coordinateMapper = new CoordinateMapper();
 
 // Handle gaze data from background script
 function handleGazeData(gazeData) {
-  if (!gazeCursor || !isVisualizationEnabled) return;
+  if (!gazeCursor) return;
 
   try {
     // Transform screen coordinates to page coordinates
     const pageCoords = coordinateMapper.screenToPage(gazeData.x, gazeData.y);
 
-    // Check if coordinates are within viewport
-    if (
-      pageCoords.x >= 0 &&
-      pageCoords.x <= window.innerWidth &&
-      pageCoords.y >= 0 &&
-      pageCoords.y <= window.innerHeight
-    ) {
-      // Update cursor position (fixed positioning already accounts for scroll)
-      gazeCursor.style.left = `${pageCoords.x}px`;
-      gazeCursor.style.top = `${pageCoords.y}px`;
-      gazeCursor.style.display = 'block';
-
-      // Adjust opacity based on confidence
-      const opacity = 0.3 + (gazeData.confidence * 0.5);
-      gazeCursor.style.opacity = opacity;
-
-      // Get element under gaze (for future analysis)
-      const elementAtGaze = coordinateMapper.getElementAtGaze(pageCoords.x, pageCoords.y);
-
-      // Log for debugging (can be removed in production)
-      if (elementAtGaze && elementAtGaze.tagName) {
-        // console.log(`Gaze at: ${elementAtGaze.tagName}`, pageCoords);
+    // Update debug panel with current gaze data
+    if (debugPanel && isDebugPanelEnabled) {
+      const debugContent = document.getElementById('rearead-debug-content');
+      if (debugContent) {
+        const blinkStatus = gazeData.blink ? '<span style="color: #ff4444;">BLINK</span>' : '<span style="color: #44ff44;">Eyes Open</span>';
+        debugContent.innerHTML = `
+          <div style="line-height: 1.6;">
+            <div><span style="color: #ffff00;">Screen:</span> ${gazeData.screen_width}x${gazeData.screen_height}</div>
+            <div><span style="color: #ffff00;">Smoothed:</span> (${gazeData.x}, ${gazeData.y}) px</div>
+            <div><span style="color: #ffff00;">Raw:</span> (${gazeData.raw_x}, ${gazeData.raw_y}) px</div>
+            <div><span style="color: #ffff00;">FPS:</span> ${gazeData.fps || 0}</div>
+            <div><span style="color: #ffff00;">Status:</span> ${blinkStatus}</div>
+            <div><span style="color: #ffff00;">Smoothing:</span> ${(gazeData.smoothing * 100).toFixed(0)}%</div>
+            <div><span style="color: #ffff00;">Confidence:</span> ${(gazeData.confidence * 100).toFixed(0)}%</div>
+          </div>
+        `;
       }
-    } else {
-      // Gaze is outside current window
-      gazeCursor.style.display = 'none';
+    }
+
+    // Update gaze cursor
+    if (isVisualizationEnabled) {
+      // Check if coordinates are within viewport
+      if (
+        pageCoords.x >= 0 &&
+        pageCoords.x <= window.innerWidth &&
+        pageCoords.y >= 0 &&
+        pageCoords.y <= window.innerHeight
+      ) {
+        // Update cursor position (fixed positioning already accounts for scroll)
+        gazeCursor.style.left = `${pageCoords.x}px`;
+        gazeCursor.style.top = `${pageCoords.y}px`;
+        gazeCursor.style.display = 'block';
+
+        // Adjust opacity based on confidence
+        const opacity = 0.3 + (gazeData.confidence * 0.5);
+        gazeCursor.style.opacity = opacity;
+
+        // Get element under gaze (for future analysis)
+        const elementAtGaze = coordinateMapper.getElementAtGaze(pageCoords.x, pageCoords.y);
+
+        // Log for debugging (can be removed in production)
+        if (elementAtGaze && elementAtGaze.tagName) {
+          // console.log(`Gaze at: ${elementAtGaze.tagName}`, pageCoords);
+        }
+      } else {
+        // Gaze is outside current window
+        gazeCursor.style.display = 'none';
+      }
     }
   } catch (error) {
     console.error('Error handling gaze data:', error);
