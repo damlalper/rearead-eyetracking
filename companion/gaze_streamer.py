@@ -7,6 +7,7 @@ from typing import Optional, Dict
 from eyetrax import GazeEstimator
 from eyetrax.calibration import run_9_point_calibration
 from eyetrax.utils.screen import get_screen_size
+from eyetrax.filters import KalmanSmoother, make_kalman
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,11 @@ class GazeStreamer:
         self.estimator = None
         self.camera = None
         self.is_calibrated = False
+        self.is_tuned = False
+        self.needs_setup = False  # Flag to trigger setup flow on first connection
         self.screen_width, self.screen_height = get_screen_size()
         self.model_path = "users/default_model.pkl"
+        self.smoother = None
 
         # Create users directory if it doesn't exist
         os.makedirs("users", exist_ok=True)
@@ -31,29 +35,36 @@ class GazeStreamer:
     def initialize_eyetrax(self):
         """Initialize EyeTrax gaze estimator and camera."""
         try:
-            logger.info(f"Initializing EyeTrax")
+            logger.debug(f"Initializing EyeTrax")
 
             # Initialize EyeTrax GazeEstimator
             self.estimator = GazeEstimator(model_name="ridge")
 
             # Try to load existing model
             if os.path.isfile(self.model_path):
-                logger.info(f"Loading existing model: {self.model_path}")
+                logger.debug(f"Loading existing model: {self.model_path}")
                 self.estimator.load_model(self.model_path)
                 self.is_calibrated = True
-                logger.info("Model loaded successfully - ready for tracking")
+                self.needs_setup = True  # Need tuning for this session
+                logger.info("Existing calibration model loaded - tuning required")
             else:
-                logger.warning("No model found - calibration required")
+                logger.info("No calibration found - full setup required")
                 self.is_calibrated = False
+                self.needs_setup = True  # Need calibration + tuning
 
             # Initialize camera
-            logger.info(f"Opening camera {self.camera_id}")
+            logger.debug(f"Opening camera {self.camera_id}")
             self.camera = cv2.VideoCapture(self.camera_id)
 
             if not self.camera.isOpened():
                 raise Exception(f"Failed to open camera {self.camera_id}")
 
-            logger.info(f"EyeTrax initialized successfully (Screen: {self.screen_width}x{self.screen_height})")
+            # Initialize Kalman filter
+            kalman = make_kalman()
+            self.smoother = KalmanSmoother(kalman)
+            logger.debug("Kalman filter initialized")
+
+            logger.info(f"EyeTrax ready (Screen: {self.screen_width}x{self.screen_height})")
             return True
 
         except ImportError as e:
@@ -65,10 +76,9 @@ class GazeStreamer:
             return False
 
     def calibrate(self):
-        """Run 9-point calibration using EyeTrax's built-in GUI."""
+        """Run 9-point calibration only (tuning handled by setup_flow)."""
         try:
-            logger.info("Starting 9-point calibration...")
-            logger.info("A fullscreen calibration window will open. Follow the on-screen instructions.")
+            logger.info("Starting 9-point calibration (follow on-screen instructions)")
 
             # Run EyeTrax calibration (this opens a fullscreen window)
             run_9_point_calibration(self.estimator, camera_index=self.camera_id)
@@ -76,16 +86,88 @@ class GazeStreamer:
             # Save the trained model
             self.estimator.save_model(self.model_path)
             self.is_calibrated = True
+            logger.info("Calibration complete - model saved")
 
-            logger.info(f"Calibration complete! Model saved: {self.model_path}")
             return True
 
         except Exception as e:
             logger.error(f"Calibration failed: {e}")
             return False
 
+    def tune_kalman(self):
+        """Run 3-point Kalman filter tuning for improved stability."""
+        try:
+            logger.info("Starting Kalman tuning (look at 3 points until they disappear)")
+
+            if not self.smoother:
+                logger.error("Kalman smoother not initialized")
+                return False
+
+            if not self.is_calibrated:
+                logger.error("Cannot tune before calibration")
+                return False
+
+            # Run tuning process (3 points)
+            self.smoother.tune(self.estimator, camera_index=self.camera_id)
+            self.is_tuned = True
+
+            logger.info("Kalman tuning complete - tracking optimized")
+            return True
+
+        except Exception as e:
+            logger.error(f"Kalman tuning failed: {e}")
+            return False
+
+    def run_setup_flow(self):
+        """Smart setup flow: calibration (if needed) + tuning → ready for tracking.
+
+        This matches EyeTrax demo behavior where setup runs automatically.
+
+        Flow:
+        - Model exists: Just run tuning → tracking ready
+        - No model: Run calibration → tuning → tracking ready
+        """
+        try:
+            logger.info("=" * 60)
+            logger.info("Starting setup flow")
+            logger.info("=" * 60)
+
+            # Step 1: Calibration (if needed)
+            if not self.is_calibrated:
+                logger.info("Step 1/2: Running 9-point calibration")
+                if not self.calibrate():
+                    logger.error("Setup failed: Calibration error")
+                    return False
+            else:
+                logger.info("Model already calibrated - skipping calibration")
+
+            # Step 2: Kalman tuning (ALWAYS needed for each session)
+            logger.info("Step 2/2: Running Kalman tuning (session-specific)")
+            if not self.tune_kalman():
+                logger.warning("Setup completed but tuning failed (non-critical)")
+                # Don't fail setup if tuning fails
+                self.is_tuned = False
+
+            self.needs_setup = False
+            logger.info("=" * 60)
+            logger.info("Setup complete - Eye tracking ready!")
+            logger.info("=" * 60)
+            return True
+
+        except Exception as e:
+            logger.error(f"Setup flow failed: {e}", exc_info=True)
+            return False
+
     def get_gaze_point(self) -> Optional[Dict]:
-        """Get current gaze point from EyeTrax using extract_features + predict."""
+        """Get current gaze point from EyeTrax using extract_features + predict.
+
+        Returns gaze data dict if successful, None if:
+        - Face not detected
+        - Eyes blinking
+        - No valid features
+
+        This matches EyeTrax demo behavior where None causes cursor fade-out.
+        """
         if not self.estimator or not self.camera or not self.is_calibrated:
             return None
 
@@ -96,10 +178,11 @@ class GazeStreamer:
                 return None
 
             # Extract features using EyeTrax
-            features, blink = self.estimator.extract_features(frame)
+            features, blink_detected = self.estimator.extract_features(frame)
 
-            # Skip if no face detected or eyes are blinking
-            if features is None or blink:
+            # Return None if no face or blinking (like EyeTrax demo)
+            # This triggers cursor fade-out in extension
+            if features is None or blink_detected:
                 return None
 
             # Predict gaze coordinates
@@ -110,12 +193,20 @@ class GazeStreamer:
             # Extract x, y coordinates
             x, y = gaze_coords[0]
 
+            # Apply Kalman smoothing (like demo: smoother.step(x, y))
+            if self.smoother:
+                x, y = self.smoother.step(int(x), int(y))
+
+            # Clamp coordinates to screen boundaries (prevent out-of-screen values)
+            x = max(0, min(int(x), self.screen_width - 1))
+            y = max(0, min(int(y), self.screen_height - 1))
+
             # Prepare gaze data packet
             gaze_data = {
                 "type": "gaze",
                 "x": int(x),
                 "y": int(y),
-                "confidence": 0.9,  # High confidence since model is trained
+                "confidence": 0.9,  # High confidence - face detected, no blink
                 "timestamp": int(time.time() * 1000),
                 "screen_width": self.screen_width,
                 "screen_height": self.screen_height
@@ -134,18 +225,20 @@ class GazeStreamer:
         """Main streaming loop that continuously sends gaze data."""
         self.is_running = True
         frame_delay = 1.0 / self.stream_frequency
+        was_ready = False  # Track when setup completes
 
-        if not self.is_calibrated:
-            logger.warning("Starting stream loop but NOT CALIBRATED - no gaze data will be sent")
-            logger.warning("Please trigger calibration from the extension")
-        else:
-            logger.info(f"Starting gaze streaming at {self.stream_frequency} Hz")
+        logger.info("Stream loop started")
 
         while self.is_running:
             loop_start = time.time()
 
-            # Only get gaze if calibrated
-            if self.is_calibrated:
+            # Check if setup just completed
+            if not self.needs_setup and self.is_calibrated and self.is_tuned and not was_ready:
+                logger.info(f"Setup complete - gaze streaming started at {self.stream_frequency} Hz")
+                was_ready = True
+
+            # Only stream if setup is complete
+            if not self.needs_setup and self.is_calibrated and self.is_tuned:
                 gaze_data = self.get_gaze_point()
 
                 # Broadcast to all connected clients
@@ -160,13 +253,13 @@ class GazeStreamer:
     def stop(self):
         """Stop the gaze streaming loop."""
         self.is_running = False
-        logger.info("Gaze streaming stopped")
+        logger.debug("Gaze streaming stopped")
 
     def cleanup(self):
         """Release camera and cleanup resources."""
         if self.camera:
             try:
                 self.camera.release()
-                logger.info("Camera released")
+                logger.debug("Camera released")
             except Exception as e:
                 logger.error(f"Error releasing camera: {e}")

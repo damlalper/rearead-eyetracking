@@ -15,6 +15,11 @@
     "duration_per_point": 2,
     "validation_threshold": 0.85
   },
+  "kalman": {
+    "enabled": true,
+    "tuning_points": 3,
+    "auto_tune_after_calibration": false
+  },
   "logging": {
     "level": "DEBUG",
     "file": "companion.log"

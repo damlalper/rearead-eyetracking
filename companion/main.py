@@ -28,17 +28,33 @@ class CompanionApp:
             with open(config_path, 'r') as f:
                 config = json.load(f)
 
-                # Configure logging from config
+                # Configure logging: Only INFO and above to console, DEBUG to file
                 log_config = config.get('logging', {})
-                log_level = getattr(logging, log_config.get('level', 'INFO'))
-                logging.basicConfig(
-                    level=log_level,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    force=True
-                )
+
+                # Root logger
+                root_logger = logging.getLogger()
+                root_logger.setLevel(logging.DEBUG)
+
+                # Console handler - only INFO and above
+                console = logging.StreamHandler()
+                console.setLevel(logging.INFO)
+                console.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+
+                # File handler - everything including DEBUG
+                file_handler = logging.FileHandler('logs/companion.log', mode='w', encoding='utf-8')
+                file_handler.setLevel(logging.DEBUG)
+                file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+                # Clear existing handlers and add new ones
+                root_logger.handlers.clear()
+                root_logger.addHandler(console)
+                root_logger.addHandler(file_handler)
+
+                # Silence noisy third-party libraries
+                logging.getLogger('websockets').setLevel(logging.WARNING)
+                logging.getLogger('asyncio').setLevel(logging.WARNING)
 
                 logger.info(f"Configuration loaded from {config_path}")
-                logger.info(f"Logging level set to: {log_config.get('level', 'INFO')}")
                 return config
         except FileNotFoundError:
             logger.error(f"Config file not found: {config_path}")

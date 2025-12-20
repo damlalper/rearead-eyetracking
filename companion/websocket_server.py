@@ -26,6 +26,11 @@ class WebSocketServer:
         # Send initial status with calibration info
         await self.send_initial_status(websocket)
 
+        # Trigger setup flow if needed (first connection or reconnect)
+        if self.gaze_streamer and self.gaze_streamer.needs_setup:
+            logger.info("Setup required - will trigger setup flow")
+            await self.trigger_setup_flow(websocket)
+
     async def unregister(self, websocket: WebSocketServerProtocol):
         """Unregister a client connection."""
         self.clients.discard(websocket)
@@ -34,19 +39,22 @@ class WebSocketServer:
     async def send_initial_status(self, websocket: WebSocketServerProtocol):
         """Send initial status with calibration info when client connects."""
         is_calibrated = False
+        is_tuned = False
         if self.gaze_streamer:
             is_calibrated = self.gaze_streamer.is_calibrated
+            is_tuned = self.gaze_streamer.is_tuned
 
         message = {
             "type": "status",
             "state": "connected",
             "calibrated": is_calibrated,
+            "tuned": is_tuned,
             "timestamp": asyncio.get_event_loop().time()
         }
 
         try:
             await websocket.send(json.dumps(message))
-            logger.info(f"Sent initial status: calibrated={is_calibrated}")
+            logger.debug(f"Sent initial status: calibrated={is_calibrated}, tuned={is_tuned}")
         except Exception as e:
             logger.error(f"Error sending initial status: {e}")
 
@@ -61,6 +69,33 @@ class WebSocketServer:
             await websocket.send(json.dumps(message))
         except Exception as e:
             logger.error(f"Error sending status: {e}")
+
+    async def trigger_setup_flow(self, websocket: WebSocketServerProtocol):
+        """Automatically trigger setup flow when extension connects.
+
+        Flow:
+        - Model exists: Just tuning → ready
+        - No model: Calibration → tuning → ready
+        """
+        logger.info("Starting automatic setup flow")
+        await self.send_status(websocket, "setup_started")
+
+        if self.gaze_streamer:
+            try:
+                # Run setup flow in separate thread (blocking operation)
+                success = await asyncio.to_thread(self.gaze_streamer.run_setup_flow)
+
+                if success:
+                    await self.send_status(websocket, "setup_completed")
+                    logger.info("Setup flow completed successfully - tracking ready")
+                else:
+                    await self.send_status(websocket, "setup_failed")
+                    logger.error("Setup flow failed")
+            except Exception as e:
+                logger.error(f"Setup flow error: {e}", exc_info=True)
+                await self.send_status(websocket, "setup_failed")
+        else:
+            logger.error("GazeStreamer not available for setup")
 
     async def broadcast_gaze(self, gaze_data: dict):
         """Broadcast gaze data to all connected clients."""
@@ -108,22 +143,38 @@ class WebSocketServer:
             # Respond to heartbeat
             await websocket.send(json.dumps({"type": "pong", "timestamp": asyncio.get_event_loop().time()}))
         elif msg_type == "calibration_request":
-            logger.info("Calibration requested by extension")
+            logger.info("Calibration requested")
             await self.send_status(websocket, "calibration_started")
 
             # Run calibration in thread to avoid blocking asyncio loop
             if self.gaze_streamer:
                 try:
-                    logger.info("Starting calibration process...")
                     # Run blocking calibration in separate thread
                     await asyncio.to_thread(self.gaze_streamer.calibrate)
-                    logger.info("Calibration completed successfully")
                     await self.send_status(websocket, "calibration_completed")
                 except Exception as e:
                     logger.error(f"Calibration failed: {e}")
                     await self.send_status(websocket, "calibration_failed")
             else:
                 logger.error("GazeStreamer not available for calibration")
+        elif msg_type == "tuning_request":
+            logger.info("Kalman tuning requested")
+            await self.send_status(websocket, "tuning_started")
+
+            # Run tuning in thread to avoid blocking asyncio loop
+            if self.gaze_streamer:
+                try:
+                    # Run blocking tuning in separate thread
+                    success = await asyncio.to_thread(self.gaze_streamer.tune_kalman)
+                    if success:
+                        await self.send_status(websocket, "tuning_completed")
+                    else:
+                        await self.send_status(websocket, "tuning_failed")
+                except Exception as e:
+                    logger.error(f"Kalman tuning error: {e}")
+                    await self.send_status(websocket, "tuning_failed")
+            else:
+                logger.error("GazeStreamer not available for tuning")
         elif msg_type == "control":
             action = data.get("action")
             logger.info(f"Control action received: {action}")
