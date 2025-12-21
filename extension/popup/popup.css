@@ -155,6 +155,15 @@ h1 {
   background-color: #1976D2;
 }
 
+.btn-danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #d32f2f;
+}
+
 .btn-secondary {
   background-color: #4CAF50;
   color: white;

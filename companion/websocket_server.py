@@ -127,7 +127,19 @@ class WebSocketServer:
         elif msg_type == "control":
             action = data.get("action")
             logger.info(f"Control action received: {action}")
-            # TODO: Handle start/stop/pause actions
+
+            if action == "stop":
+                logger.info("Stop command received - stopping gaze streaming")
+                if self.gaze_streamer:
+                    self.gaze_streamer.stop()
+                await self.send_status(websocket, "stopped")
+            elif action == "start":
+                logger.info("Start command received - starting gaze streaming")
+                if self.gaze_streamer and not self.gaze_streamer.is_running:
+                    # Restart streaming
+                    await self.gaze_streamer.stream_loop(self)
+                await self.send_status(websocket, "running")
+            # TODO: Handle pause action
 
     async def start(self):
         """Start the WebSocket server."""

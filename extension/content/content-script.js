@@ -58,6 +58,10 @@ function initializeGazeVisualization() {
   `;
 
   document.body.appendChild(debugPanel);
+
+  // Hide debug panel initially - will be shown when connection is established
+  debugPanel.style.display = 'none';
+
   console.log('Debug panel initialized');
 }
 
@@ -115,6 +119,9 @@ function handleGazeData(gazeData) {
 
     // Update debug panel with current gaze data
     if (debugPanel && isDebugPanelEnabled) {
+      // Show debug panel when data arrives
+      debugPanel.style.display = 'block';
+
       const debugContent = document.getElementById('rearead-debug-content');
       if (debugContent) {
         const blinkStatus = gazeData.blink ? '<span style="color: #ff4444;">BLINK</span>' : '<span style="color: #44ff44;">Eyes Open</span>';
@@ -167,6 +174,19 @@ function handleGazeData(gazeData) {
   }
 }
 
+// Cleanup function to remove all elements
+function cleanup() {
+  if (gazeCursor && gazeCursor.parentNode) {
+    gazeCursor.parentNode.removeChild(gazeCursor);
+    gazeCursor = null;
+  }
+  if (debugPanel && debugPanel.parentNode) {
+    debugPanel.parentNode.removeChild(debugPanel);
+    debugPanel = null;
+  }
+  console.log('ReaRead elements cleaned up');
+}
+
 // Listen for messages from background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
@@ -180,6 +200,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         gazeCursor.style.display = isVisualizationEnabled ? 'block' : 'none';
       }
       sendResponse({ enabled: isVisualizationEnabled });
+      break;
+
+    case 'CLEANUP':
+      cleanup();
+      sendResponse({ success: true });
       break;
 
     case 'GET_PAGE_INFO':

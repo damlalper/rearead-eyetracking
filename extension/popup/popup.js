@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusDot = document.getElementById('status-dot');
   const statusText = document.getElementById('status-text');
   const btnReconnect = document.getElementById('btn-reconnect');
+  const btnDisconnect = document.getElementById('btn-disconnect');
   const btnCalibrate = document.getElementById('btn-calibrate');
   const toggleVisualization = document.getElementById('toggle-visualization');
 
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event listeners
   btnReconnect.addEventListener('click', handleReconnect);
+  btnDisconnect.addEventListener('click', handleDisconnect);
   btnCalibrate.addEventListener('click', handleCalibrate);
   toggleVisualization.addEventListener('change', handleToggleVisualization);
 
@@ -78,6 +80,19 @@ document.addEventListener('DOMContentLoaded', () => {
         btnReconnect.textContent = 'Reconnect';
         updateConnectionStatus();
       }, 1000);
+    });
+  }
+
+  function handleDisconnect() {
+    btnDisconnect.disabled = true;
+    btnDisconnect.textContent = 'Disconnecting...';
+
+    chrome.runtime.sendMessage({ type: 'DISCONNECT' }, (response) => {
+      setTimeout(() => {
+        btnDisconnect.disabled = false;
+        btnDisconnect.textContent = 'Disconnect';
+        updateConnectionStatus();
+      }, 500);
     });
   }
 

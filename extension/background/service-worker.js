@@ -205,6 +205,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ success: true });
       break;
 
+    case 'DISCONNECT':
+      if (websocket && websocket.readyState === WebSocket.OPEN) {
+        // Send stop command to Python before closing
+        sendMessage({
+          type: 'control',
+          action: 'stop'
+        });
+        // Close WebSocket
+        websocket.close();
+        console.log('Disconnected by user');
+      }
+      updateConnectionStatus('disconnected');
+
+      // Cleanup all tabs - remove debug panels and cursors
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          chrome.tabs.sendMessage(tab.id, { type: 'CLEANUP' }).catch(() => {
+            // Ignore errors for tabs where content script isn't loaded
+          });
+        });
+      });
+
+      sendResponse({ success: true });
+      break;
+
     case 'REQUEST_CALIBRATION':
       sendMessage({
         type: 'calibration_request',
@@ -228,8 +253,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true; // Keep message channel open for async response
 });
 
-// Cleanup on extension unload
+// Cleanup on extension unload or disable
 chrome.runtime.onSuspend.addListener(() => {
+  // Cleanup all tabs
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach(tab => {
+      chrome.tabs.sendMessage(tab.id, { type: 'CLEANUP' }).catch(() => {});
+    });
+  });
+
   if (websocket) {
     websocket.close();
   }
