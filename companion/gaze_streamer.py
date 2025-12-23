@@ -7,7 +7,7 @@ from typing import Optional, Dict
 from eyetrax import GazeEstimator
 from eyetrax.calibration import run_9_point_calibration
 from eyetrax.utils.screen import get_screen_size
-from eyetrax.filters import KalmanSmoother, make_kalman
+from eyetrax.filters import KalmanSmoother, make_kalman, KDESmoother
 
 logger = logging.getLogger(__name__)
 
@@ -59,10 +59,15 @@ class GazeStreamer:
             if not self.camera.isOpened():
                 raise Exception(f"Failed to open camera {self.camera_id}")
 
-            # Initialize Kalman filter
-            kalman = make_kalman()
-            self.smoother = KalmanSmoother(kalman)
-            logger.debug("Kalman filter initialized")
+            # Initialize lightweight KDE smoother (less aggressive than Kalman)
+            self.smoother = KDESmoother(
+                screen_w=self.screen_width,
+                screen_h=self.screen_height,
+                time_window=0.2,    # Short time window (200ms) for responsiveness
+                confidence=0.3,     # Low confidence = less smoothing, more responsive
+                grid=(320, 200)     # Default grid resolution
+            )
+            logger.debug("KDE smoother initialized (lightweight)")
 
             logger.info(f"EyeTrax ready (Screen: {self.screen_width}x{self.screen_height})")
             return True
@@ -95,27 +100,25 @@ class GazeStreamer:
             return False
 
     def tune_kalman(self):
-        """Run 3-point Kalman filter tuning for improved stability."""
+        """Enable KDE smoother (no tuning needed for KDE)."""
         try:
-            logger.info("Starting Kalman tuning (look at 3 points until they disappear)")
+            logger.info("KDE smoother ready (no tuning required)")
 
             if not self.smoother:
-                logger.error("Kalman smoother not initialized")
+                logger.error("Smoother not initialized")
                 return False
 
             if not self.is_calibrated:
-                logger.error("Cannot tune before calibration")
+                logger.error("Cannot enable smoother before calibration")
                 return False
 
-            # Run tuning process (3 points)
-            self.smoother.tune(self.estimator, camera_index=self.camera_id)
+            # KDE doesn't require tuning - just enable it
             self.is_tuned = True
-
-            logger.info("Kalman tuning complete - tracking optimized")
+            logger.info("KDE smoother enabled - lightweight tracking active")
             return True
 
         except Exception as e:
-            logger.error(f"Kalman tuning failed: {e}")
+            logger.error(f"Smoother setup failed: {e}")
             return False
 
     def run_setup_flow(self):
@@ -141,11 +144,11 @@ class GazeStreamer:
             else:
                 logger.info("Model already calibrated - skipping calibration")
 
-            # Step 2: Kalman tuning (ALWAYS needed for each session)
-            logger.info("Step 2/2: Running Kalman tuning (session-specific)")
+            # Step 2: Enable KDE smoother (no tuning needed)
+            logger.info("Step 2/2: Enabling KDE smoother (lightweight)")
             if not self.tune_kalman():
-                logger.warning("Setup completed but tuning failed (non-critical)")
-                # Don't fail setup if tuning fails
+                logger.warning("Setup completed but smoother failed (non-critical)")
+                # Don't fail setup if smoother fails
                 self.is_tuned = False
 
             self.needs_setup = False
@@ -193,8 +196,8 @@ class GazeStreamer:
             # Extract x, y coordinates
             x, y = gaze_coords[0]
 
-            # Apply Kalman smoothing (like demo: smoother.step(x, y))
-            if self.smoother:
+            # Apply lightweight KDE smoothing (less aggressive than Kalman)
+            if self.smoother and self.is_tuned:
                 x, y = self.smoother.step(int(x), int(y))
 
             # Clamp coordinates to screen boundaries (prevent out-of-screen values)

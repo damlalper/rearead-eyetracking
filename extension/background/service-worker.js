@@ -120,14 +120,13 @@ function handleMessage(data) {
 }
 
 function broadcastToContentScripts(message) {
-  chrome.tabs.query({}, (tabs) => {
-    tabs.forEach(tab => {
-      if (tab.id) {
-        chrome.tabs.sendMessage(tab.id, message).catch(() => {
-          // Ignore errors for tabs without content script
-        });
-      }
-    });
+  // Only send to the currently active tab in the focused window
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs.length > 0 && tabs[0].id) {
+      chrome.tabs.sendMessage(tabs[0].id, message).catch(() => {
+        // Ignore errors for tabs without content script
+      });
+    }
   });
 }
 

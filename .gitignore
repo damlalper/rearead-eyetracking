@@ -20,8 +20,7 @@
   *.swp
 
 # ReaRead specific
-  users/
-  *.log
-  config.local.json
-
-  nul
+users/
+companion/users/
+*.log
+config.local.json

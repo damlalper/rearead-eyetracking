@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnReconnect = document.getElementById('btn-reconnect');
   const btnCalibrate = document.getElementById('btn-calibrate');
   const toggleVisualization = document.getElementById('toggle-visualization');
+  const toggleReadingMode = document.getElementById('toggle-reading-mode');
 
   // Get initial connection status
   updateConnectionStatus();
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnReconnect.addEventListener('click', handleReconnect);
   btnCalibrate.addEventListener('click', handleCalibrate);
   toggleVisualization.addEventListener('change', handleToggleVisualization);
+  toggleReadingMode.addEventListener('change', handleToggleReadingMode);
 
   // Functions
   function updateConnectionStatus() {
@@ -102,6 +104,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tabs[0]) {
         chrome.tabs.sendMessage(tabs[0].id, {
           type: 'TOGGLE_VISUALIZATION'
+        });
+      }
+    });
+  }
+
+  function handleToggleReadingMode() {
+    const enabled = toggleReadingMode.checked;
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'TOGGLE_READING_MODE',
+          enabled: enabled
         });
       }
     });
