@@ -227,8 +227,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true; // Keep message channel open for async response
 });
 
-// Cleanup on extension unload
+// Cleanup on extension unload/disable
 chrome.runtime.onSuspend.addListener(() => {
+  console.log('[SERVICE WORKER] Extension suspending - cleaning up...');
+
+  // Send cleanup signal to all tabs
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach(tab => {
+      if (tab.id) {
+        chrome.tabs.sendMessage(tab.id, { type: 'EXTENSION_DISABLED' }).catch(() => {
+          // Ignore errors for tabs without content script
+        });
+      }
+    });
+  });
+
   if (websocket) {
     websocket.close();
   }

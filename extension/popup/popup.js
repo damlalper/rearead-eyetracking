@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnReconnect = document.getElementById('btn-reconnect');
   const btnCalibrate = document.getElementById('btn-calibrate');
   const toggleVisualization = document.getElementById('toggle-visualization');
-  const toggleReadingMode = document.getElementById('toggle-reading-mode');
+  const toggleReadingAssist = document.getElementById('toggle-reading-assist');
 
   // Get initial connection status
   updateConnectionStatus();
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnReconnect.addEventListener('click', handleReconnect);
   btnCalibrate.addEventListener('click', handleCalibrate);
   toggleVisualization.addEventListener('change', handleToggleVisualization);
-  toggleReadingMode.addEventListener('change', handleToggleReadingMode);
+  toggleReadingAssist.addEventListener('change', handleToggleReadingAssist);
 
   // Functions
   function updateConnectionStatus() {
@@ -98,8 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleToggleVisualization() {
-    const enabled = toggleVisualization.checked;
-
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
         chrome.tabs.sendMessage(tabs[0].id, {
@@ -109,13 +107,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function handleToggleReadingMode() {
-    const enabled = toggleReadingMode.checked;
+  function handleToggleReadingAssist() {
+    const enabled = toggleReadingAssist.checked;
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) {
         chrome.tabs.sendMessage(tabs[0].id, {
-          type: 'TOGGLE_READING_MODE',
+          type: 'TOGGLE_PX_ASSIST_MODE',
           enabled: enabled
         });
       }

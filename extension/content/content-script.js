@@ -1,123 +1,87 @@
 // ReaRead Content Script
-// Handles gaze visualization and coordinate transformation
-
 console.log('ReaRead content script loaded');
+
+const DEBUG_PARAGRAPH = false;
+const DEBUG_DWELL = false;
+const DEBUG_DIFFICULTY = true;
 
 // Gaze cursor element
 let gazeCursor = null;
 let isVisualizationEnabled = true;
 
-// Reading Mode state
-let readingModeActive = false;
-let readingOverlay = null;
-const FIXED_READING_WIDTH = 1280; // Fixed viewport width for stable gaze-text mapping
+// PX Assist is always active (no mode toggle)
+let pxLineRects = [];
+let scrollTimeout = null;
 
-// DOM-based line mapping (measures actual line positions)
-let lineRects = []; // Array of {index, top, bottom} for each line
+// PX ASSIST: Stable IDs (NodeList indices change on scroll/DOM mutations)
+const pxIdMap = new WeakMap();
+function getPxIdForElement(el) {
+  if (!pxIdMap.has(el)) {
+    pxIdMap.set(el, crypto.randomUUID());
+  }
+  const id = pxIdMap.get(el);
+  if (!el.hasAttribute('data-rearead-id')) {
+    el.setAttribute('data-rearead-id', id);
+  }
+  return id;
+}
 
-// Initialize gaze visualization
+// Paragraph tracking (Keys: "p:uuid" using stable IDs)
+let currentParagraphKey = null;
+let paragraphStartTime = null;
+let paragraphDwellTimes = {};
+let paragraphDifficultyLogged = {};
+
+// Fast/slow loops
+let lastViewportGaze = { x: 0, y: 0 };
+let analysisIntervalId = null;
+const ANALYSIS_INTERVAL_MS = 250;
+let smoothedOpacity = 0.6;
+
 function initializeGazeVisualization() {
-  // Create gaze cursor element
   gazeCursor = document.createElement('div');
   gazeCursor.id = 'rearead-gaze-cursor';
   gazeCursor.style.cssText = `
-    position: fixed;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    background-color: rgba(255, 0, 0, 0.5);
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    pointer-events: none;
-    z-index: 999999;
-    display: none;
-    transform: translate(-50%, -50%);
-    transition: all 0.1s ease-out;
+    position: fixed; width: 30px; height: 30px; border-radius: 50%;
+    background-color: rgba(255, 0, 0, 0.5); border: 2px solid rgba(255, 255, 255, 0.8);
+    pointer-events: none; z-index: 999999; display: none; top: 0; left: 0;
+    transform: translate3d(-15px, -15px, 0); will-change: transform;
   `;
-
   document.body.appendChild(gazeCursor);
   console.log('Gaze cursor initialized');
 }
 
-// Coordinate transformation: Screen → Viewport → Page
+// Coordinate transformation: Screen → Viewport
 class CoordinateMapper {
-  constructor() {
-    this.browserChromeHeight = window.outerHeight - window.innerHeight;
-    this.browserChromeWidth = window.outerWidth - window.innerWidth;
-  }
-
   screenToViewport(screenX, screenY) {
-    // Convert screen coordinates to browser viewport
-    // Account for window position
     const viewportX = screenX - window.screenX;
-    const viewportY = screenY - window.screenY - this.browserChromeHeight;
-
-    // Account for device pixel ratio (high-DPI displays)
+    const viewportY = screenY - window.screenY;
     const dpr = window.devicePixelRatio || 1;
-
-    return {
-      x: viewportX / dpr,
-      y: viewportY / dpr
-    };
-  }
-
-  viewportToPage(viewportX, viewportY) {
-    // Convert viewport coordinates to page coordinates (accounting for scroll)
-    return {
-      x: viewportX,
-      y: viewportY
-    };
-  }
-
-  screenToPage(screenX, screenY) {
-    // Direct conversion from screen to page coordinates
-    const viewport = this.screenToViewport(screenX, screenY);
-    return this.viewportToPage(viewport.x, viewport.y);
-  }
-
-  getElementAtGaze(pageX, pageY) {
-    // Get DOM element at gaze position
-    return document.elementFromPoint(pageX, pageY);
+    return { x: viewportX / dpr, y: viewportY / dpr };
   }
 }
 
 const coordinateMapper = new CoordinateMapper();
 
-// Handle gaze data from background script
+// FAST LOOP: Update cursor (60 FPS)
 function handleGazeData(gazeData) {
   if (!gazeCursor || !isVisualizationEnabled) return;
-
   try {
-    // Transform screen coordinates to page coordinates
-    const pageCoords = coordinateMapper.screenToPage(gazeData.x, gazeData.y);
+    const viewportCoords = coordinateMapper.screenToViewport(gazeData.x, gazeData.y);
 
-    // Check if coordinates are within viewport
-    if (
-      pageCoords.x >= 0 &&
-      pageCoords.x <= window.innerWidth &&
-      pageCoords.y >= 0 &&
-      pageCoords.y <= window.innerHeight
-    ) {
-      // Update cursor position (fixed positioning already accounts for scroll)
-      gazeCursor.style.left = `${pageCoords.x}px`;
-      gazeCursor.style.top = `${pageCoords.y}px`;
+    if (viewportCoords.x >= 0 && viewportCoords.x <= window.innerWidth &&
+        viewportCoords.y >= 0 && viewportCoords.y <= window.innerHeight) {
+      gazeCursor.style.transform = `translate3d(${viewportCoords.x - 15}px, ${viewportCoords.y - 15}px, 0)`;
       gazeCursor.style.display = 'block';
 
-      // Adjust opacity based on confidence
-      const opacity = 0.3 + (gazeData.confidence * 0.5);
-      gazeCursor.style.opacity = opacity;
+      const targetOpacity = 0.3 + (gazeData.confidence * 0.5);
+      smoothedOpacity = smoothedOpacity * 0.85 + targetOpacity * 0.15;
+      gazeCursor.style.opacity = smoothedOpacity;
 
-      // Calculate paragraph index if Reading Mode is active
-      if (readingModeActive && readingOverlay) {
-        const paraData = calculateLineIndex(pageCoords.x, pageCoords.y);
-        if (paraData && paraData.lineIndex >= 0) {
-          console.log(`[READING] Paragraph: ${paraData.lineIndex}`);
-        }
-      }
-
-      // Get element under gaze (for future analysis)
-      const elementAtGaze = coordinateMapper.getElementAtGaze(pageCoords.x, pageCoords.y);
+      // Cache viewport coordinates for paragraph analysis
+      lastViewportGaze.x = viewportCoords.x;
+      lastViewportGaze.y = viewportCoords.y;
     } else {
-      // Gaze is outside current window
       gazeCursor.style.display = 'none';
     }
   } catch (error) {
@@ -125,216 +89,240 @@ function handleGazeData(gazeData) {
   }
 }
 
-// Calculate line index from viewport coordinates (Reading Mode only)
-// DOM-based approach: measures actual line positions instead of math
-// ALL COORDINATES IN VIEWPORT SPACE (from getBoundingClientRect)
-function calculateLineIndex(viewportX, viewportY) {
-  if (!readingModeActive || !readingOverlay || lineRects.length === 0) {
-    return null;
+function calculateParagraphKey(viewportY) {
+  if (pxLineRects.length === 0) return null;
+
+  for (const rect of pxLineRects) {
+    if (viewportY >= rect.top && viewportY < rect.bottom) {
+      return { key: rect.key, el: rect.el };
+    }
   }
+  return null;
+}
 
-  const contentContainer = readingOverlay.querySelector('#rearead-content-container');
-  if (!contentContainer) {
-    return null;
+// SLOW LOOP: Analyze reading (250ms)
+function analyzeReadingBehavior() {
+  const paraData = calculateParagraphKey(lastViewportGaze.y);
+  if (!paraData || !paraData.key) return;
+
+  const key = paraData.key;
+  const now = Date.now();
+
+  if (key !== currentParagraphKey) {
+    if (currentParagraphKey && paragraphStartTime) {
+      const dwellTime = now - paragraphStartTime;
+      paragraphDwellTimes[currentParagraphKey] =
+        (paragraphDwellTimes[currentParagraphKey] || 0) + dwellTime;
+
+      if (DEBUG_DWELL) {
+        console.log(`[DWELL] ${currentParagraphKey}: ${paragraphDwellTimes[currentParagraphKey]}ms`);
+      }
+
+      const prevKey = currentParagraphKey;
+      requestAnimationFrame(() => updateParagraphHighlight(prevKey));
+    }
+
+    currentParagraphKey = key;
+    paragraphStartTime = now;
+
+    if (DEBUG_PARAGRAPH) {
+      console.log(`[READING] Switched to: ${key}`);
+    }
+  } else {
+    requestAnimationFrame(() => updateParagraphHighlight(currentParagraphKey));
   }
+}
 
-  const containerRect = contentContainer.getBoundingClientRect();
+function updateParagraphHighlight(key) {
+  if (!key) return;
 
-  // Check if gaze is within content container (viewport space)
-  if (viewportX < containerRect.left || viewportX > containerRect.right ||
-      viewportY < containerRect.top || viewportY > containerRect.bottom) {
-    return null;
-  }
+  const id = key.split(':')[1];
+  const para = document.querySelector(`[data-rearead-id="${id}"]`);
 
-  // Find which paragraph the gaze falls into (VIEWPORT space comparison)
-  for (const paraRect of lineRects) {
-    if (viewportY >= paraRect.top && viewportY < paraRect.bottom) {
-      return {
-        overlayX: viewportX - containerRect.left,
-        overlayY: viewportY - containerRect.top,
-        lineIndex: paraRect.index
-      };
+  if (!para) return;
+
+  let expectedTimeSec = parseFloat(para.getAttribute('data-expected-time'));
+
+  if (!expectedTimeSec || expectedTimeSec <= 0) {
+    const text = para.textContent.trim();
+    if (text) {
+      const wordCount = text.split(/\s+/).length;
+      expectedTimeSec = wordCount / (200 / 60);
+      para.setAttribute('data-expected-time', expectedTimeSec.toFixed(1));
     }
   }
 
-  // Gaze is inside container but not on any paragraph (padding/margins)
-  return {
-    overlayX: viewportX - containerRect.left,
-    overlayY: viewportY - containerRect.top,
-    lineIndex: -1
-  };
-}
+  if (!expectedTimeSec || expectedTimeSec <= 0) return;
 
-// Reading Mode functions
-function createReadingOverlay() {
-  // Create overlay container
-  readingOverlay = document.createElement('div');
-  readingOverlay.id = 'rearead-reading-overlay';
-  readingOverlay.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #f5f5f5;
-    z-index: 999998;
-    overflow-y: auto;
-    display: none;
-  `;
+  const now = Date.now();
+  const baseTime = paragraphDwellTimes[key] || 0;
+  const currentSessionTime = (currentParagraphKey === key && paragraphStartTime) ? (now - paragraphStartTime) : 0;
+  const totalDwell = baseTime + currentSessionTime;
+  const actualTimeSec = totalDwell / 1000;
+  const difficultyRatio = actualTimeSec / expectedTimeSec;
 
-  // Create content container (fixed width)
-  const contentContainer = document.createElement('div');
-  contentContainer.id = 'rearead-content-container';
-  contentContainer.style.cssText = `
-    width: ${FIXED_READING_WIDTH}px;
-    margin: 40px auto;
-    padding: 60px 80px;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    font-family: Georgia, serif;
-    font-size: 18px;
-    line-height: 1.6;
-    color: #333;
-  `;
+  let targetBg = '';
+  let needsHelpButton = false;
 
-  // Extract main content
-  const content = extractPageContent();
-  contentContainer.innerHTML = content;
-
-  // Wrap text nodes in line elements for DOM-based line tracking
-  wrapTextIntoLines(contentContainer);
-
-  // Measure actual line positions AFTER layout is calculated
-  // Use requestAnimationFrame to ensure DOM is rendered
-  requestAnimationFrame(() => {
-    measureLinePositions(contentContainer);
-  });
-
-  // Add close button
-  const closeButton = document.createElement('button');
-  closeButton.textContent = '✕ Exit Reading Mode';
-  closeButton.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 10px 20px;
-    background: #333;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    z-index: 999999;
-    font-size: 14px;
-  `;
-  closeButton.onclick = () => toggleReadingMode(false);
-
-  readingOverlay.appendChild(contentContainer);
-  readingOverlay.appendChild(closeButton);
-  document.body.appendChild(readingOverlay);
-
-  console.log('Reading overlay created');
-}
-
-function extractPageContent() {
-  // Try to find main content using common selectors
-  const selectors = [
-    'article',
-    'main',
-    '[role="main"]',
-    '.post-content',
-    '.article-content',
-    '.entry-content',
-    '#content',
-    '.content'
-  ];
-
-  let contentElement = null;
-  for (const selector of selectors) {
-    contentElement = document.querySelector(selector);
-    if (contentElement) break;
+  if (difficultyRatio >= 1.6) {
+    targetBg = 'rgba(255, 230, 150, 0.30)';
+    needsHelpButton = true;
+    if (DEBUG_DIFFICULTY && !paragraphDifficultyLogged[key]) {
+      console.log(`[DIFFICULTY] ${key} ratio=${difficultyRatio.toFixed(2)}`);
+      paragraphDifficultyLogged[key] = true;
+    }
+  } else if (difficultyRatio >= 1.3) {
+    targetBg = 'rgba(255, 230, 150, 0.15)';
   }
 
-  // Fallback: use body
-  if (!contentElement) {
-    contentElement = document.body;
+  if (para.style.backgroundColor !== targetBg) {
+    para.style.backgroundColor = targetBg;
+    para.style.transition = 'background-color 0.5s ease';
   }
 
-  // Clone and clean content
-  const clone = contentElement.cloneNode(true);
+  const existingBtn = document.querySelector(`.rearead-help-btn[data-key="${key}"]`);
 
-  // Remove scripts, styles, ads
-  const unwanted = clone.querySelectorAll('script, style, iframe, .ad, .advertisement, nav, header, footer, aside');
-  unwanted.forEach(el => el.remove());
-
-  return clone.innerHTML;
+  if (needsHelpButton && !existingBtn) {
+    addHelpButton(para, key);
+  }
 }
 
-// Simple paragraph detection - no wrapping needed
-function wrapTextIntoLines(container) {
-  // Just find paragraphs - don't modify DOM
-  const paragraphs = container.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li');
+function addHelpButton(para, key) {
+  const helpBtn = document.createElement('button');
+  helpBtn.className = 'rearead-help-btn';
+  helpBtn.setAttribute('data-key', key);
+  helpBtn.innerHTML = '💡 Get Help';
 
-  console.log(`Found ${paragraphs.length} reading units (paragraphs/headings)`);
+  const paraRect = para.getBoundingClientRect();
+  let leftPos = paraRect.right + 10;
+  const maxLeft = window.innerWidth - 150;
+  if (leftPos > maxLeft) {
+    leftPos = paraRect.left - 150;
+    if (leftPos < 0) leftPos = 10;
+  }
 
-  // Add data attribute for tracking
-  paragraphs.forEach((para, index) => {
-    if (para.textContent.trim()) {
-      para.setAttribute('data-paragraph-index', index);
+  helpBtn.style.cssText = `
+    position: fixed; left: ${leftPos}px; top: ${paraRect.top}px; padding: 8px 16px;
+    background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer;
+    font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1000;
+    transition: top 0.1s ease-out;
+  `;
+
+  helpBtn.onclick = () => requestLLMHelp(key);
+  document.body.appendChild(helpBtn);
+}
+
+function updateHelpButtonPositions() {
+  const helpButtons = document.querySelectorAll('.rearead-help-btn');
+
+  helpButtons.forEach(btn => {
+    const key = btn.getAttribute('data-key');
+    if (!key) return;
+
+    const id = key.split(':')[1];
+    const para = document.querySelector(`[data-rearead-id="${id}"]`);
+
+    if (para) {
+      const paraRect = para.getBoundingClientRect();
+      let leftPos = paraRect.right + 10;
+      const maxLeft = window.innerWidth - 150;
+      if (leftPos > maxLeft) {
+        leftPos = paraRect.left - 150;
+        if (leftPos < 0) leftPos = 10;
+      }
+      btn.style.left = `${leftPos}px`;
+      btn.style.top = `${paraRect.top}px`;
     }
   });
 }
 
-// Measure paragraph positions directly
-function measureLinePositions(container) {
-  lineRects = [];
+function requestLLMHelp(key) {
+  console.log(`[LLM] Requesting help for ${key}`);
 
-  const paragraphs = container.querySelectorAll('[data-paragraph-index]');
+  const id = key.split(':')[1];
+  const para = document.querySelector(`[data-rearead-id="${id}"]`);
+
+  if (!para) return;
+
+  const text = para.textContent.trim();
+  alert(`Help requested for ${key}:\n\n"${text.substring(0, 100)}..."\n\n(LLM integration coming soon)`);
+}
+
+
+function measurePxPositions() {
+  pxLineRects = [];
+  const paragraphs = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li');
 
   paragraphs.forEach((para) => {
+    const text = para.textContent.trim();
+    if (!text || text.length < 3) return;
+
+    const id = getPxIdForElement(para);
+    const key = `p:${id}`;
     const rect = para.getBoundingClientRect();
-    const index = parseInt(para.getAttribute('data-paragraph-index'));
 
-    // Skip very small elements (likely empty or formatting)
-    if (rect.height < 10) {
-      return;
-    }
+    if (rect.height < 10) return;
 
-    lineRects.push({
-      index: index,
+    pxLineRects.push({
+      key: key,
+      el: para,
       top: rect.top,
       bottom: rect.bottom,
       height: rect.height
     });
   });
 
-  console.log(`Measured ${lineRects.length} paragraphs for reading tracking`);
-
-  // Debug: show first 3 paragraphs
-  lineRects.slice(0, 3).forEach(para => {
-    console.log(`Paragraph ${para.index}: top=${para.top.toFixed(1)}px, bottom=${para.bottom.toFixed(1)}px, height=${para.height.toFixed(1)}px`);
-  });
-}
-
-function toggleReadingMode(enabled) {
-  readingModeActive = enabled;
-
-  if (enabled) {
-    if (!readingOverlay) {
-      createReadingOverlay();
-    }
-    readingOverlay.style.display = 'block';
-    document.body.style.overflow = 'hidden'; // Prevent background scroll
-    console.log('Reading Mode activated');
-  } else {
-    if (readingOverlay) {
-      readingOverlay.style.display = 'none';
-    }
-    document.body.style.overflow = ''; // Restore scroll
-    console.log('Reading Mode deactivated');
+  if (DEBUG_PARAGRAPH) {
+    console.log(`[PX] Measured ${pxLineRects.length} paragraphs`);
   }
 }
 
-// Listen for messages from background script
+function startPxAssist() {
+  measurePxPositions();
+  window.addEventListener('scroll', handlePxModeScroll);
+
+  currentParagraphKey = null;
+  paragraphStartTime = null;
+
+  if (analysisIntervalId) clearInterval(analysisIntervalId);
+  analysisIntervalId = setInterval(analyzeReadingBehavior, ANALYSIS_INTERVAL_MS);
+
+  console.log('[PX ASSIST] Started');
+}
+
+function stopPxAssist() {
+  window.removeEventListener('scroll', handlePxModeScroll);
+
+  document.querySelectorAll('[data-rearead-id]').forEach(para => {
+    para.style.backgroundColor = '';
+  });
+
+  document.querySelectorAll('.rearead-help-btn').forEach(btn => btn.remove());
+
+  if (analysisIntervalId) {
+    clearInterval(analysisIntervalId);
+    analysisIntervalId = null;
+  }
+
+  if (DEBUG_DWELL) {
+    console.log('[PX] Dwell times:', paragraphDwellTimes);
+  }
+
+  console.log('[PX ASSIST] Stopped');
+}
+
+function handlePxModeScroll() {
+  updateHelpButtonPositions();
+
+  if (scrollTimeout) clearTimeout(scrollTimeout);
+  scrollTimeout = setTimeout(() => {
+    measurePxPositions();
+    if (DEBUG_PARAGRAPH) {
+      console.log('[PX SCROLL] Re-measured (IDs stable)');
+    }
+  }, 150);
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.type) {
     case 'GAZE_DATA':
@@ -349,13 +337,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse({ enabled: isVisualizationEnabled });
       break;
 
-    case 'TOGGLE_READING_MODE':
-      toggleReadingMode(message.enabled);
-      sendResponse({ success: true, enabled: message.enabled });
+    case 'TOGGLE_PX_ASSIST_MODE':
+      if (message.enabled) {
+        startPxAssist();
+      } else {
+        stopPxAssist();
+      }
+      sendResponse({ success: true, enabled: message.enabled, mode: 'px_assist' });
       break;
 
     case 'GET_PAGE_INFO':
-      // Return current page information
       sendResponse({
         url: window.location.href,
         title: document.title,
@@ -377,21 +368,55 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       });
       break;
   }
-
   return true;
 });
 
-// Update browser chrome dimensions on window resize
-window.addEventListener('resize', () => {
-  coordinateMapper.browserChromeHeight = window.outerHeight - window.innerHeight;
-  coordinateMapper.browserChromeWidth = window.outerWidth - window.innerWidth;
-});
-
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeGazeVisualization);
-} else {
+function initialize() {
   initializeGazeVisualization();
+  // Auto-start PX Assist (always-on reading assistance)
+  startPxAssist();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initialize);
+} else {
+  initialize();
 }
 
 console.log('ReaRead content script initialized');
+
+// CLEANUP: Remove all visual artifacts when extension is disabled/unloaded
+window.addEventListener('beforeunload', cleanupAll);
+window.addEventListener('pagehide', cleanupAll);
+
+// Listen for extension being disabled/uninstalled
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.type === 'EXTENSION_DISABLED') {
+    cleanupAll();
+  }
+});
+
+function cleanupAll() {
+  console.log('[CLEANUP] Removing all ReaRead artifacts...');
+
+  // Remove gaze cursor
+  if (gazeCursor && gazeCursor.parentNode) {
+    gazeCursor.parentNode.removeChild(gazeCursor);
+  }
+
+  // Stop PX Assist
+  stopPxAssist();
+
+  // Remove all data attributes and highlights
+  document.querySelectorAll('[data-rearead-id]').forEach(para => {
+    para.removeAttribute('data-rearead-id');
+    para.removeAttribute('data-expected-time');
+    para.style.backgroundColor = '';
+    para.style.transition = '';
+  });
+
+  // Remove all help buttons
+  document.querySelectorAll('.rearead-help-btn').forEach(btn => btn.remove());
+
+  console.log('[CLEANUP] Complete');
+}

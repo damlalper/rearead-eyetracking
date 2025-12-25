@@ -59,15 +59,18 @@ class GazeStreamer:
             if not self.camera.isOpened():
                 raise Exception(f"Failed to open camera {self.camera_id}")
 
-            # Initialize lightweight KDE smoother (less aggressive than Kalman)
+            # Initialize KDE smoother with ChatGPT-optimized settings
+            # SMOOTHING TUNING: Increase values if cursor is jittery
+            # time_window: 0.1-0.5 (kısa=hızlı, uzun=yumuşak)
+            # confidence: 0.1-0.7 (düşük=az smoothing, yüksek=çok smoothing)
             self.smoother = KDESmoother(
                 screen_w=self.screen_width,
                 screen_h=self.screen_height,
-                time_window=0.2,    # Short time window (200ms) for responsiveness
-                confidence=0.3,     # Low confidence = less smoothing, more responsive
+                time_window=0.35,   # 350ms → mikro sakkadları yutar (was 0.2)
+                confidence=0.55,    # orta seviye smoothing (was 0.3)
                 grid=(320, 200)     # Default grid resolution
             )
-            logger.debug("KDE smoother initialized (lightweight)")
+            logger.debug("KDE smoother initialized (ChatGPT-optimized: time_window=0.35, confidence=0.55)")
 
             logger.info(f"EyeTrax ready (Screen: {self.screen_width}x{self.screen_height})")
             return True
