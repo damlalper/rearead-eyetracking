@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="ReaRead - Webcam-based eye tracking for reading comprehension and analysis. Free browser extension with AI-powered insights.">
-    <meta name="keywords" content="eye tracking, reading analysis, browser extension, AI, education, accessibility">
-    <title>ReaRead - Eye-Tracking Reading Assistant</title>
+    <meta name="description" content="ReaRead - Revolutionary webcam-based eye tracking for reading analysis. Transform how you read with AI-powered insights and real-time analytics.">
+    <meta name="keywords" content="eye tracking, reading analysis, browser extension, AI, education, accessibility, productivity">
+    <title>ReaRead - Next-Gen Eye-Tracking Reading Assistant</title>
 
     <!-- Open Graph for social sharing -->
-    <meta property="og:title" content="ReaRead - Eye-Tracking Reading Assistant">
-    <meta property="og:description" content="Webcam-based eye tracking for reading comprehension and analysis">
+    <meta property="og:title" content="ReaRead - Next-Gen Eye-Tracking Reading Assistant">
+    <meta property="og:description" content="Revolutionary webcam-based eye tracking for reading analysis and AI-powered comprehension">
     <meta property="og:type" content="website">
 
     <style>
@@ -19,479 +19,808 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --accent: #ec4899;
+            --dark: #0f172a;
+            --darker: #020617;
+            --light: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            color: #1f2937;
-            background: #ffffff;
+            color: var(--text-primary);
+            background: var(--darker);
+            overflow-x: hidden;
+        }
+
+        /* Animated gradient background */
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e293b);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Particle effects */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 50%;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 0;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #e2e8f0;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #6366f1;
         }
 
         /* Hero Section */
         .hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 80px 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             text-align: center;
+            padding: 120px 20px 80px;
+            position: relative;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            color: #a5b4fc;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
         }
 
         .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 20px;
-            letter-spacing: -0.02em;
+            font-size: 5rem;
+            font-weight: 900;
+            margin-bottom: 25px;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #ffffff, #e0e7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
         }
 
         .hero .tagline {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            opacity: 0.95;
-            font-weight: 300;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+            font-weight: 600;
         }
 
         .hero .subtitle {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            margin-bottom: 50px;
+            line-height: 1.8;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Glowing buttons */
+        .btn-group {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 40px;
             font-size: 1.1rem;
-            opacity: 0.9;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 50px rgba(99, 102, 241, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border: 2px solid rgba(99, 102, 241, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: #6366f1;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 120px 20px;
+            background: linear-gradient(180deg, var(--darker), #1e1b4b);
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-label {
+            color: #6366f1;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .section-subtitle {
+            font-size: 1.3rem;
+            color: #94a3b8;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 40px;
+            border-radius: 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.2);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: white;
+            font-weight: 700;
+        }
+
+        .feature-card p {
+            color: #94a3b8;
+            line-height: 1.8;
+            font-size: 1.05rem;
+        }
+
+        /* Technology Section */
+        .technology {
+            padding: 120px 20px;
+            background: linear-gradient(180deg, #1e1b4b, var(--darker));
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-top: 60px;
+        }
+
+        .tech-item {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .tech-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+        }
+
+        .tech-item h4 {
+            color: white;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .tech-item p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+
+        /* Stats Section */
+        .stats {
+            padding: 80px 20px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stats::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moveGrid 20s linear infinite;
+        }
+
+        @keyframes moveGrid {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 50px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-number {
+            font-size: 4rem;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(255,255,255,0.3);
+        }
+
+        .stat-label {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.9);
+            font-weight: 600;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 120px 20px;
+            background: var(--darker);
+        }
+
+        .steps-container {
+            max-width: 1000px;
+            margin: 60px auto 0;
+            position: relative;
+        }
+
+        .step {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 40px;
+            margin-bottom: 60px;
+            align-items: start;
+        }
+
+        .step-number {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border-radius: 20px;
+            font-size: 2.5rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.3);
+        }
+
+        .step-content h3 {
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 15px;
+        }
+
+        .step-content p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 120px 20px;
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            text-align: center;
+        }
+
+        .cta h2 {
+            font-size: 3.5rem;
+            color: white;
+            margin-bottom: 30px;
+            font-weight: 800;
+        }
+
+        .cta p {
+            font-size: 1.3rem;
+            color: #cbd5e1;
             margin-bottom: 40px;
             max-width: 700px;
             margin-left: auto;
             margin-right: auto;
         }
 
-        /* Buttons */
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 30px;
+        /* Footer */
+        footer {
+            background: var(--darker);
+            border-top: 1px solid rgba(99, 102, 241, 0.1);
+            color: #64748b;
+            padding: 60px 20px 30px;
         }
 
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 14px 32px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: white;
-            color: #667eea;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid white;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .status-badge {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.25);
-            color: white;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-
-        /* Features Section */
-        .features {
-            padding: 80px 20px;
-            background: #f9fafb;
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 50px;
-            color: #111827;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
-        }
-
-        .feature-card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-        }
-
-        .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-        }
-
-        .feature-card h3 {
-            font-size: 1.4rem;
-            margin-bottom: 12px;
-            color: #1f2937;
-        }
-
-        .feature-card p {
-            color: #6b7280;
-            line-height: 1.7;
-        }
-
-        /* How It Works */
-        .how-it-works {
-            padding: 80px 20px;
-            background: white;
-        }
-
-        .steps {
+        .footer-content {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 40px;
-            margin-top: 50px;
+            margin-bottom: 40px;
         }
 
-        .step {
-            text-align: center;
-        }
-
-        .step-number {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .footer-section h4 {
             color: white;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            font-weight: 700;
-            line-height: 50px;
             margin-bottom: 20px;
-        }
-
-        .step h3 {
-            font-size: 1.3rem;
-            margin-bottom: 10px;
-            color: #111827;
-        }
-
-        .step p {
-            color: #6b7280;
-        }
-
-        /* Installation */
-        .installation {
-            padding: 80px 20px;
-            background: #f9fafb;
-        }
-
-        .install-steps {
-            max-width: 800px;
-            margin: 40px auto;
-        }
-
-        .install-step {
-            background: white;
-            padding: 25px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .install-step strong {
-            color: #667eea;
             font-size: 1.1rem;
         }
 
-        .install-step code {
-            background: #f3f4f6;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-        }
-
-        /* Stats */
-        .stats {
-            padding: 60px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .stat-label {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        /* Footer */
-        footer {
-            background: #111827;
-            color: #9ca3af;
-            padding: 40px 20px;
-            text-align: center;
-        }
-
-        footer a {
-            color: #667eea;
+        .footer-section a {
+            color: #94a3b8;
             text-decoration: none;
+            display: block;
+            margin-bottom: 10px;
+            transition: color 0.3s;
         }
 
-        footer a:hover {
-            text-decoration: underline;
+        .footer-section a:hover {
+            color: #6366f1;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid rgba(99, 102, 241, 0.1);
+            color: #64748b;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .hero h1 {
-                font-size: 2.5rem;
+                font-size: 3rem;
             }
 
             .hero .tagline {
-                font-size: 1.2rem;
-            }
-
-            .btn-group {
-                flex-direction: column;
+                font-size: 1.3rem;
             }
 
             .section-title {
-                font-size: 2rem;
+                font-size: 2.5rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .step {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .step-number {
+                margin: 0 auto;
+            }
+
+            .nav-links {
+                display: none;
             }
         }
 
-        /* Demo placeholder */
-        .demo-placeholder {
-            background: #e5e7eb;
-            border-radius: 12px;
-            padding: 60px 20px;
-            text-align: center;
-            margin: 40px auto;
-            max-width: 900px;
+        /* Scroll animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .demo-placeholder h3 {
-            color: #6b7280;
-            margin-bottom: 15px;
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out;
         }
     </style>
 </head>
 <body>
+    <div class="gradient-bg"></div>
+
+    <!-- Particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div class="logo">ReaRead</div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#technology">Technology</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="https://github.com/damlalper/rearead-eyetracking" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <!-- Hero Section -->
     <section class="hero">
         <div class="container">
-            <div class="status-badge">🚀 Beta v0.1.0</div>
-            <h1>ReaRead</h1>
-            <p class="tagline">Eye-Tracking Reading Assistant</p>
-            <p class="subtitle">
-                Transform your reading experience with AI-powered eye tracking.
-                Understand how you read, improve comprehension, and get instant help with difficult text.
-            </p>
+            <div class="hero-content fade-in-up">
+                <div class="status-badge">🚀 Beta v0.1.0 - Now Available</div>
+                <h1>ReaRead</h1>
+                <p class="tagline">Next-Generation Eye-Tracking Reading Assistant</p>
+                <p class="subtitle">
+                    Transform your reading experience with cutting-edge AI-powered eye tracking.
+                    Understand exactly how you read, identify comprehension patterns, and get instant AI assistance—all through your webcam.
+                </p>
 
-            <div class="btn-group">
-                <a href="#" class="btn btn-primary" id="download-btn">
-                    📥 Get Extension (Coming Soon to Chrome Web Store)
-                </a>
-                <a href="https://github.com/damlalper/rearead-eyetracking" class="btn btn-secondary" target="_blank">
-                    ⭐ View on GitHub
-                </a>
+                <div class="btn-group">
+                    <a href="#" class="btn btn-primary" id="download-btn">
+                        Download Extension
+                    </a>
+                    <a href="https://github.com/damlalper/rearead-eyetracking" class="btn btn-secondary" target="_blank">
+                        View on GitHub
+                    </a>
+                </div>
+
+                <p style="margin-top: 30px; color: #64748b; font-size: 1rem;">
+                    ✨ Free Forever • 🌐 Open Source • 🔒 Privacy-First • 💻 No Special Hardware
+                </p>
             </div>
-
-            <p style="margin-top: 20px; opacity: 0.8; font-size: 0.95rem;">
-                ✨ Free • 🌐 Open Source • 💻 Works with any webpage
-            </p>
         </div>
     </section>
 
     <!-- Features Section -->
-    <section class="features">
+    <section class="features" id="features">
         <div class="container">
-            <h2 class="section-title">Powerful Features</h2>
+            <div class="section-header">
+                <div class="section-label">POWERFUL CAPABILITIES</div>
+                <h2 class="section-title">Revolutionary Reading Analytics</h2>
+                <p class="section-subtitle">
+                    Professional-grade eye tracking technology meets AI-powered comprehension assistance
+                </p>
+            </div>
 
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">👁️</div>
                     <h3>Real-Time Eye Tracking</h3>
-                    <p>Uses your webcam to track where you're looking while reading. No special hardware needed.</p>
+                    <p>Advanced webcam-based gaze estimation using MediaPipe FaceMesh with 468 facial landmarks. Tracks your reading position at 30 FPS with sub-degree accuracy—no expensive hardware required.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3>AI-Powered Text Assistance</h3>
+                    <p>Integrated Llama 3.3 70B language model provides instant paragraph summarization and simplification. Get help understanding complex text with a single click—no interruption to your flow.</p>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">📊</div>
-                    <h3>Reading Analytics</h3>
-                    <p>Get insights on your reading speed (WPM), fixation patterns, and comprehension metrics.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🤖</div>
-                    <h3>AI-Powered Assistance</h3>
-                    <p>Instant text summarization and simplification using advanced language models.</p>
+                    <h3>Reading Behavior Analytics</h3>
+                    <p>Comprehensive metrics including words per minute (WPM), fixation duration, saccade patterns, and regression analysis. Understand your reading habits like never before.</p>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">🎯</div>
-                    <h3>Fixation Detection</h3>
-                    <p>Automatically identifies which words and paragraphs you focus on most.</p>
+                    <h3>Intelligent Fixation Detection</h3>
+                    <p>I-DT (Dispersion-Threshold Identification) algorithm automatically identifies which words and paragraphs you focus on. See exactly where your attention goes during reading.</p>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon">🔥</div>
                     <h3>Difficulty Heatmaps</h3>
-                    <p>Visual overlay showing which parts of the text were challenging to read.</p>
+                    <p>Visual overlay highlighting challenging text sections based on your fixation patterns. Instantly identify where you struggled and optimize your learning strategy.</p>
                 </div>
 
                 <div class="feature-card">
-                    <div class="feature-icon">🌍</div>
-                    <h3>Multi-Language</h3>
-                    <p>Supports both Turkish and English with automatic language detection.</p>
+                    <div class="feature-icon">⚡</div>
+                    <h3>KDE Smoothing & Kalman Filtering</h3>
+                    <p>Production-grade signal processing with Kernel Density Estimation and auto-tuned Kalman filters. Eliminates jitter for smooth, accurate gaze tracking on any webpage.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- How It Works -->
-    <section class="how-it-works">
+    <!-- Technology Section -->
+    <section class="technology" id="technology">
         <div class="container">
-            <h2 class="section-title">How It Works</h2>
+            <div class="section-header">
+                <div class="section-label">CUTTING-EDGE TECHNOLOGY</div>
+                <h2 class="section-title">Built on Advanced Research</h2>
+                <p class="section-subtitle">
+                    Computer vision, machine learning, and AI combined for unprecedented reading insights
+                </p>
+            </div>
 
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h3>Install Extension</h3>
-                    <p>Add ReaRead to Chrome in just one click</p>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <div class="tech-icon">🎥</div>
+                    <h4>MediaPipe FaceMesh</h4>
+                    <p>468-point facial landmark detection for precise gaze estimation</p>
                 </div>
 
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h3>Calibrate Camera</h3>
-                    <p>Quick 20-second calibration for accurate tracking</p>
+                <div class="tech-item">
+                    <div class="tech-icon">📈</div>
+                    <h4>Ridge Regression</h4>
+                    <p>Machine learning model trained for accurate gaze prediction</p>
                 </div>
 
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h3>Start Reading</h3>
-                    <p>Open any webpage and see real-time gaze tracking</p>
+                <div class="tech-item">
+                    <div class="tech-icon">🌊</div>
+                    <h4>KDE Smoothing</h4>
+                    <p>Kernel Density Estimation for jitter-free tracking</p>
                 </div>
 
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <h3>Get Insights</h3>
-                    <p>Analyze your reading patterns and improve comprehension</p>
+                <div class="tech-item">
+                    <div class="tech-icon">🤖</div>
+                    <h4>Llama 3.3 70B</h4>
+                    <p>State-of-the-art language model for text assistance</p>
+                </div>
+
+                <div class="tech-item">
+                    <div class="tech-icon">⚙️</div>
+                    <h4>WebSocket Streaming</h4>
+                    <p>Real-time bidirectional communication at 30 FPS</p>
+                </div>
+
+                <div class="tech-item">
+                    <div class="tech-icon">🔬</div>
+                    <h4>I-DT Algorithm</h4>
+                    <p>Research-backed fixation detection methodology</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Demo Placeholder -->
-    <section class="features" style="background: white;">
-        <div class="container">
-            <h2 class="section-title">See It In Action</h2>
-            <div class="demo-placeholder">
-                <h3>📹 Demo Video Coming Soon</h3>
-                <p>We're preparing a comprehensive demo showcasing all features</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Installation Guide -->
-    <section class="installation">
-        <div class="container">
-            <h2 class="section-title">Installation Guide</h2>
-
-            <div class="install-steps">
-                <div class="install-step">
-                    <strong>Step 1:</strong> Install the Chrome extension from the Web Store (link coming soon)
-                </div>
-
-                <div class="install-step">
-                    <strong>Step 2:</strong> Download and install the companion app:
-                    <br><code>git clone https://github.com/damlalper/rearead-eyetracking</code>
-                    <br><code>cd ReaRead2/companion && pip install -r requirements.txt</code>
-                </div>
-
-                <div class="install-step">
-                    <strong>Step 3:</strong> Run the companion app:
-                    <br><code>python main.py</code>
-                </div>
-
-                <div class="install-step">
-                    <strong>Step 4:</strong> Click the extension icon and follow the calibration wizard
-                </div>
-
-                <div class="install-step">
-                    <strong>Step 5:</strong> Start reading on any webpage and enjoy AI-powered reading assistance!
-                </div>
-            </div>
-
-            <p style="text-align: center; margin-top: 30px; color: #6b7280;">
-                <strong>Requirements:</strong> Python 3.11+, Webcam, Chrome Browser
-            </p>
-        </div>
-    </section>
-
-    <!-- Stats -->
+    <!-- Stats Section -->
     <section class="stats">
         <div class="container">
             <div class="stats-grid">
+                <div class="stat">
+                    <div class="stat-number">30</div>
+                    <div class="stat-label">FPS Tracking</div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-number">468</div>
+                    <div class="stat-label">Facial Landmarks</div>
+                </div>
+
                 <div class="stat">
                     <div class="stat-number">$0</div>
                     <div class="stat-label">Completely Free</div>
                 </div>
 
                 <div class="stat">
-                    <div class="stat-number">30 FPS</div>
-                    <div class="stat-label">Real-Time Tracking</div>
-                </div>
-
-                <div class="stat">
                     <div class="stat-number">100%</div>
                     <div class="stat-label">Open Source</div>
                 </div>
+            </div>
+        </div>
+    </section>
 
-                <div class="stat">
-                    <div class="stat-number">2</div>
-                    <div class="stat-label">Languages Supported</div>
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">GET STARTED</div>
+                <h2 class="section-title">Up and Running in Minutes</h2>
+                <p class="section-subtitle">
+                    Simple setup process with automatic calibration and tuning
+                </p>
+            </div>
+
+            <div class="steps-container">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Install the Extension</h3>
+                        <p>Add ReaRead to Chrome from the Web Store (or load unpacked from GitHub). The extension integrates seamlessly with any webpage you visit.</p>
+                    </div>
                 </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Run the Companion App</h3>
+                        <p>Download and run the Python companion app. It handles all the heavy lifting—eye tracking, machine learning inference, and gaze estimation—locally on your machine.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Quick Calibration</h3>
+                        <p>Follow the automatic calibration wizard (9 points, 20 seconds). The system builds a personalized gaze model and auto-tunes Kalman filters for optimal accuracy.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Start Reading!</h3>
+                        <p>Open any article or webpage. Watch real-time gaze tracking, get AI assistance on difficult paragraphs, and review your reading analytics when you're done.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to Transform Your Reading?</h2>
+            <p>
+                Join researchers, students, and productivity enthusiasts using ReaRead to understand and improve their reading comprehension.
+            </p>
+            <div class="btn-group">
+                <a href="#" class="btn btn-primary" id="download-btn-2">
+                    Download Now - It's Free
+                </a>
+                <a href="https://github.com/damlalper/rearead-eyetracking" class="btn btn-secondary" target="_blank">
+                    View Documentation
+                </a>
             </div>
         </div>
     </section>
@@ -499,23 +828,94 @@
     <!-- Footer -->
     <footer>
         <div class="container">
-            <p>&copy; 2025 ReaRead - Eye-Tracking Reading Assistant</p>
-            <p style="margin-top: 10px;">
-                <a href="https://github.com/damlalper/rearead-eyetracking" target="_blank">GitHub</a> •
-                <a href="https://github.com/damlalper/rearead-eyetracking/blob/main/README.md" target="_blank">Documentation</a> •
-                <a href="https://github.com/damlalper/rearead-eyetracking/issues" target="_blank">Report Issue</a>
-            </p>
-            <p style="margin-top: 15px; font-size: 0.9rem;">
-                Developed as a Computer Engineering Graduation Project
-            </p>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>ReaRead</h4>
+                    <p style="color: #64748b; line-height: 1.8;">
+                        Next-generation eye-tracking reading assistant built with cutting-edge AI and computer vision technology.
+                    </p>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <a href="https://github.com/damlalper/rearead-eyetracking" target="_blank">GitHub Repository</a>
+                    <a href="https://github.com/damlalper/rearead-eyetracking/blob/main/README.md" target="_blank">Documentation</a>
+                    <a href="https://github.com/damlalper/rearead-eyetracking/issues" target="_blank">Report Issues</a>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Project</h4>
+                    <a href="#">About</a>
+                    <a href="#">Research Paper</a>
+                    <a href="#">Privacy Policy</a>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Connect</h4>
+                    <a href="https://github.com/damlalper" target="_blank">Developer GitHub</a>
+                    <a href="#">Contact</a>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 ReaRead - Eye-Tracking Reading Assistant</p>
+                <p style="margin-top: 10px; font-size: 0.9rem;">
+                    Developed as a Computer Engineering Graduation Project
+                </p>
+            </div>
         </div>
     </footer>
 
     <script>
-        // Placeholder alert for download button
-        document.getElementById('download-btn').addEventListener('click', function(e) {
+        // Create floating particles
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 20 + 's';
+            particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+            particlesContainer.appendChild(particle);
+        }
+
+        // Download button handlers
+        function handleDownload(e) {
             e.preventDefault();
-            alert('Extension will be available on Chrome Web Store soon!\n\nFor now, you can install from GitHub:\nhttps://github.com/damlalper/rearead-eyetracking');
+            alert('🚀 ReaRead Extension\n\nThe extension will be available on Chrome Web Store soon!\n\nFor now, you can:\n1. Clone from GitHub: https://github.com/damlalper/rearead-eyetracking\n2. Load the extension folder as unpacked extension in Chrome\n3. Run the companion app: python companion/main.py\n\nFull installation instructions in the README!');
+        }
+
+        document.getElementById('download-btn').addEventListener('click', handleDownload);
+        document.getElementById('download-btn-2').addEventListener('click', handleDownload);
+
+        // Smooth scroll for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href !== '#') {
+                    e.preventDefault();
+                    document.querySelector(href).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in-up');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature-card, .tech-item, .step').forEach(el => {
+            observer.observe(el);
         });
     </script>
 </body>
