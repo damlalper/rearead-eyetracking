@@ -6,6 +6,33 @@
 // Purpose: Provide AI-powered reading assistance without affecting core features
 
 /**
+ * Get stored API key from Chrome storage
+ * @returns {Promise<string|null>} - API key or null if not set
+ */
+async function getStoredAPIKey() {
+  try {
+    const result = await chrome.storage.local.get(['groq_api_key']);
+    return result.groq_api_key || null;
+  } catch (error) {
+    console.error('[LLM] Error retrieving API key:', error);
+    return null;
+  }
+}
+
+/**
+ * Save API key to Chrome storage
+ * @param {string} apiKey - The API key to store
+ */
+async function saveAPIKey(apiKey) {
+  try {
+    await chrome.storage.local.set({ groq_api_key: apiKey });
+    console.log('[LLM] API key saved successfully');
+  } catch (error) {
+    console.error('[LLM] Error saving API key:', error);
+  }
+}
+
+/**
  * Core LLM call function - isolated and reusable (Groq API)
  * @param {Object} options - Configuration object
  * @param {string} options.mode - Help mode: "summary", "simplify", "explain", etc.
@@ -13,11 +40,17 @@
  * @returns {Promise<string>} - LLM response text
  */
 async function callLLM({ mode, text }) {
-  // Configuration - API key should be loaded from user settings
-  // For now, prompt user to add their key in extension settings
+  // Get API key from Chrome storage (stored in popup settings)
+  const apiKey = await getStoredAPIKey();
+
+  if (!apiKey) {
+    console.error('[LLM] No API key found. Please set it in extension popup.');
+    return 'Error: API key not configured. Click the extension icon to add your Groq API key.';
+  }
+
   const LLM_CONFIG = {
     apiEndpoint: 'https://api.groq.com/openai/v1/chat/completions',
-    apiKey: prompt('Enter your Groq API key (get free key from console.groq.com):') || '', // TODO: Store in chrome.storage
+    apiKey: apiKey,
     model: 'llama-3.3-70b-versatile', // Fast and free model
     maxTokens: 500,
     temperature: 0.7

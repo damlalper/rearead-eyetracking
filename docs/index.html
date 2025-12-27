@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ReaRead - Webcam-based eye tracking for reading comprehension and analysis. Free browser extension with AI-powered insights.">
+    <meta name="keywords" content="eye tracking, reading analysis, browser extension, AI, education, accessibility">
+    <title>ReaRead - Eye-Tracking Reading Assistant</title>
+
+    <!-- Open Graph for social sharing -->
+    <meta property="og:title" content="ReaRead - Eye-Tracking Reading Assistant">
+    <meta property="og:description" content="Webcam-based eye tracking for reading comprehension and analysis">
+    <meta property="og:type" content="website">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: #ffffff;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+
+        .hero .tagline {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .hero .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 40px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 20px;
+            background: #f9fafb;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 50px;
+            color: #111827;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 12px;
+            color: #1f2937;
+        }
+
+        .feature-card p {
+            color: #6b7280;
+            line-height: 1.7;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 80px 20px;
+            background: white;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-top: 50px;
+        }
+
+        .step {
+            text-align: center;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 50px;
+            margin-bottom: 20px;
+        }
+
+        .step h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: #111827;
+        }
+
+        .step p {
+            color: #6b7280;
+        }
+
+        /* Installation */
+        .installation {
+            padding: 80px 20px;
+            background: #f9fafb;
+        }
+
+        .install-steps {
+            max-width: 800px;
+            margin: 40px auto;
+        }
+
+        .install-step {
+            background: white;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .install-step strong {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .install-step code {
+            background: #f3f4f6;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Stats */
+        .stats {
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        footer {
+            background: #111827;
+            color: #9ca3af;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero .tagline {
+                font-size: 1.2rem;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+
+        /* Demo placeholder */
+        .demo-placeholder {
+            background: #e5e7eb;
+            border-radius: 12px;
+            padding: 60px 20px;
+            text-align: center;
+            margin: 40px auto;
+            max-width: 900px;
+        }
+
+        .demo-placeholder h3 {
+            color: #6b7280;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="status-badge">🚀 Beta v0.1.0</div>
+            <h1>ReaRead</h1>
+            <p class="tagline">Eye-Tracking Reading Assistant</p>
+            <p class="subtitle">
+                Transform your reading experience with AI-powered eye tracking.
+                Understand how you read, improve comprehension, and get instant help with difficult text.
+            </p>
+
+            <div class="btn-group">
+                <a href="#" class="btn btn-primary" id="download-btn">
+                    📥 Get Extension (Coming Soon to Chrome Web Store)
+                </a>
+                <a href="https://github.com/damlalper/rearead-eyetracking" class="btn btn-secondary" target="_blank">
+                    ⭐ View on GitHub
+                </a>
+            </div>
+
+            <p style="margin-top: 20px; opacity: 0.8; font-size: 0.95rem;">
+                ✨ Free • 🌐 Open Source • 💻 Works with any webpage
+            </p>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Powerful Features</h2>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👁️</div>
+                    <h3>Real-Time Eye Tracking</h3>
+                    <p>Uses your webcam to track where you're looking while reading. No special hardware needed.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Reading Analytics</h3>
+                    <p>Get insights on your reading speed (WPM), fixation patterns, and comprehension metrics.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI-Powered Assistance</h3>
+                    <p>Instant text summarization and simplification using advanced language models.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Fixation Detection</h3>
+                    <p>Automatically identifies which words and paragraphs you focus on most.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔥</div>
+                    <h3>Difficulty Heatmaps</h3>
+                    <p>Visual overlay showing which parts of the text were challenging to read.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <h3>Multi-Language</h3>
+                    <p>Supports both Turkish and English with automatic language detection.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Install Extension</h3>
+                    <p>Add ReaRead to Chrome in just one click</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Calibrate Camera</h3>
+                    <p>Quick 20-second calibration for accurate tracking</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Start Reading</h3>
+                    <p>Open any webpage and see real-time gaze tracking</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Get Insights</h3>
+                    <p>Analyze your reading patterns and improve comprehension</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Placeholder -->
+    <section class="features" style="background: white;">
+        <div class="container">
+            <h2 class="section-title">See It In Action</h2>
+            <div class="demo-placeholder">
+                <h3>📹 Demo Video Coming Soon</h3>
+                <p>We're preparing a comprehensive demo showcasing all features</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Guide -->
+    <section class="installation">
+        <div class="container">
+            <h2 class="section-title">Installation Guide</h2>
+
+            <div class="install-steps">
+                <div class="install-step">
+                    <strong>Step 1:</strong> Install the Chrome extension from the Web Store (link coming soon)
+                </div>
+
+                <div class="install-step">
+                    <strong>Step 2:</strong> Download and install the companion app:
+                    <br><code>git clone https://github.com/damlalper/rearead-eyetracking</code>
+                    <br><code>cd ReaRead2/companion && pip install -r requirements.txt</code>
+                </div>
+
+                <div class="install-step">
+                    <strong>Step 3:</strong> Run the companion app:
+                    <br><code>python main.py</code>
+                </div>
+
+                <div class="install-step">
+                    <strong>Step 4:</strong> Click the extension icon and follow the calibration wizard
+                </div>
+
+                <div class="install-step">
+                    <strong>Step 5:</strong> Start reading on any webpage and enjoy AI-powered reading assistance!
+                </div>
+            </div>
+
+            <p style="text-align: center; margin-top: 30px; color: #6b7280;">
+                <strong>Requirements:</strong> Python 3.11+, Webcam, Chrome Browser
+            </p>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat">
+                    <div class="stat-number">$0</div>
+                    <div class="stat-label">Completely Free</div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-number">30 FPS</div>
+                    <div class="stat-label">Real-Time Tracking</div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-number">100%</div>
+                    <div class="stat-label">Open Source</div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">Languages Supported</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 ReaRead - Eye-Tracking Reading Assistant</p>
+            <p style="margin-top: 10px;">
+                <a href="https://github.com/damlalper/rearead-eyetracking" target="_blank">GitHub</a> •
+                <a href="https://github.com/damlalper/rearead-eyetracking/blob/main/README.md" target="_blank">Documentation</a> •
+                <a href="https://github.com/damlalper/rearead-eyetracking/issues" target="_blank">Report Issue</a>
+            </p>
+            <p style="margin-top: 15px; font-size: 0.9rem;">
+                Developed as a Computer Engineering Graduation Project
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Placeholder alert for download button
+        document.getElementById('download-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Extension will be available on Chrome Web Store soon!\n\nFor now, you can install from GitHub:\nhttps://github.com/damlalper/rearead-eyetracking');
+        });
+    </script>
+</body>
+</html>
