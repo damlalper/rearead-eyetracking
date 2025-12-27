@@ -24,3 +24,4 @@ users/
 companion/users/
 *.log
 config.local.json
+.env

@@ -17,6 +17,7 @@ let scrollTimeout = null;
 let currentLineIndex = -1;
 let currentParagraphLines = [];
 let debugPanel = null;
+const SHOW_DEBUG_PANEL = true; // Set to true for development debugging
 
 // PX ASSIST: Stable IDs (NodeList indices change on scroll/DOM mutations)
 const pxIdMap = new WeakMap();
@@ -43,6 +44,10 @@ let analysisIntervalId = null;
 const ANALYSIS_INTERVAL_MS = 250;
 let smoothedOpacity = 0.6;
 
+// GAZE STALE GUARD: Track last valid gaze timestamp
+let lastGazeTimestamp = 0;
+const MAX_GAZE_AGE_MS = 400;
+
 function initializeGazeVisualization() {
   gazeCursor = document.createElement('div');
   gazeCursor.id = 'rearead-gaze-cursor';
@@ -57,6 +62,8 @@ function initializeGazeVisualization() {
 }
 
 function initializeDebugPanel() {
+  if (!SHOW_DEBUG_PANEL) return; // Skip if debug panel disabled
+
   debugPanel = document.createElement('div');
   debugPanel.id = 'rearead-debug-panel';
   debugPanel.style.cssText = `
@@ -110,6 +117,9 @@ function handleGazeData(gazeData) {
       // Cache viewport coordinates for paragraph analysis
       lastViewportGaze.x = viewportCoords.x;
       lastViewportGaze.y = viewportCoords.y;
+
+      // GAZE STALE GUARD: Update timestamp only for valid viewport coordinates
+      lastGazeTimestamp = Date.now();
     } else {
       gazeCursor.style.display = 'none';
     }
@@ -279,6 +289,12 @@ function updateDebugPanel(paragraphKey, lineIndex, totalLines, lineText) {
 
 // SLOW LOOP: Analyze reading (250ms)
 function analyzeReadingBehavior() {
+  // GAZE STALE GUARD: Skip analysis if gaze data is stale
+  if (Date.now() - lastGazeTimestamp > MAX_GAZE_AGE_MS) {
+    updateDebugPanel(null, -1, 0, '');
+    return;
+  }
+
   const paraData = calculateParagraphKey(lastViewportGaze.x, lastViewportGaze.y);
   if (!paraData || !paraData.key) {
     // No paragraph detected - reset debug panel
@@ -441,7 +457,14 @@ function requestLLMHelp(key) {
   if (!para) return;
 
   const text = para.textContent.trim();
-  alert(`Help requested for ${key}:\n\n"${text.substring(0, 100)}..."\n\n(LLM integration coming soon)`);
+
+  // Import LLM helper module (use chrome.runtime.getURL for extension resources)
+  const helperUrl = chrome.runtime.getURL('content/llm-helper.js');
+  import(helperUrl)
+    .then(module => module.requestHelp({ key, text }))
+    .catch(error => {
+      console.error('[LLM] Failed to load helper:', error);
+    });
 }
 
 

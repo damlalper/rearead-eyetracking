@@ -45,7 +45,7 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["content/gaze-cursor.png"],
+      "resources": ["content/gaze-cursor.png", "content/llm-helper.js"],
       "matches": ["<all_urls>"]
     }
   ]

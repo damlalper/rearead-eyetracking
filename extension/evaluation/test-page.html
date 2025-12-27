@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReaRead Evaluation Test Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 { color: #333; }
+    .paragraph-group {
+      margin: 40px 0;
+      padding: 20px;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+    }
+    .difficulty-label {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .easy { background: #4CAF50; color: white; }
+    .medium { background: #FF9800; color: white; }
+    .hard { background: #F44336; color: white; }
+
+    .feedback-section {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      padding: 20px;
+      border: 2px solid #2196F3;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      max-width: 300px;
+    }
+    .feedback-btn {
+      padding: 8px 16px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-difficult { background: #F44336; color: white; }
+    .btn-normal { background: #4CAF50; color: white; }
+    .btn-export { background: #2196F3; color: white; width: 100%; margin-top: 10px; }
+
+    #current-paragraph {
+      font-weight: bold;
+      color: #2196F3;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 ReaRead Evaluation Test Page</h1>
+  <p><strong>Instructions:</strong></p>
+  <ol>
+    <li><strong>Click a paragraph</strong> to select it (it will turn orange)</li>
+    <li>Read it naturally</li>
+    <li>Click "<strong>Difficult</strong>" or "<strong>Normal</strong>" button to record your feedback</li>
+    <li>Repeat for other paragraphs</li>
+    <li>Click "<strong>Export Metrics</strong>" when done</li>
+  </ol>
+
+  <!-- Easy Paragraphs -->
+  <div class="paragraph-group">
+    <span class="difficulty-label easy">EASY</span>
+    <p data-difficulty="easy" onclick="selectParagraph(this, 'easy-1')" style="cursor: pointer;">
+      Artificial intelligence is transforming the way we live and work. From virtual assistants like Siri and Alexa
+      to self-driving cars, AI is becoming an integral part of our daily lives. These technologies use machine learning
+      algorithms to improve their performance over time.
+    </p>
+  </div>
+
+  <div class="paragraph-group">
+    <span class="difficulty-label easy">EASY</span>
+    <p data-difficulty="easy" onclick="selectParagraph(this, 'easy-1')" style="cursor: pointer;">
+      Climate change is one of the biggest challenges facing our planet today. Rising temperatures, melting ice caps,
+      and extreme weather events are just some of the consequences. Scientists worldwide are working on sustainable
+      solutions to reduce carbon emissions and protect our environment.
+    </p>
+  </div>
+
+  <!-- Medium Paragraphs -->
+  <div class="paragraph-group">
+    <span class="difficulty-label medium">MEDIUM</span>
+    <p data-difficulty="medium" onclick="selectParagraph(this, 'medium-1')" style="cursor: pointer;">
+      Quantum computing represents a paradigm shift in computational capabilities. Unlike classical computers that use
+      bits (0s and 1s), quantum computers leverage qubits that can exist in superposition states. This enables them
+      to solve certain problems exponentially faster than traditional computers, particularly in cryptography and
+      molecular simulation domains. However, maintaining quantum coherence remains a significant technical challenge
+      requiring extremely low temperatures.
+    </p>
+  </div>
+
+  <div class="paragraph-group">
+    <span class="difficulty-label medium">MEDIUM</span>
+    <p data-difficulty="medium" onclick="selectParagraph(this, 'medium-2')" style="cursor: pointer;">
+      Neural networks are inspired by the biological neural networks that constitute animal brains. They consist of
+      interconnected nodes organized in layers: input, hidden, and output layers. Through backpropagation and gradient
+      descent optimization, these networks adjust their weights to minimize prediction errors. Deep learning architectures
+      with multiple hidden layers have achieved breakthrough results in computer vision and natural language processing.
+    </p>
+  </div>
+
+  <!-- Hard Paragraphs -->
+  <div class="paragraph-group">
+    <span class="difficulty-label hard">HARD</span>
+    <p data-difficulty="hard" onclick="selectParagraph(this, 'hard-1')" style="cursor: pointer;">
+      The Riemann Hypothesis, one of the seven Millennium Prize Problems, postulates that all non-trivial zeros of
+      the Riemann zeta function ζ(s) have real part equal to 1/2. Formally, if ζ(s) = 0 and 0 &lt; Re(s) &lt; 1, then
+      Re(s) = 1/2. This conjecture has profound implications for the distribution of prime numbers, as the zeta function
+      encodes information about prime number density through its Euler product representation. Despite extensive numerical
+      verification for billions of zeros, a general proof remains elusive after over 160 years.
+    </p>
+  </div>
+
+  <div class="paragraph-group">
+    <span class="difficulty-label hard">HARD</span>
+    <p data-difficulty="hard" onclick="selectParagraph(this, 'hard-2')" style="cursor: pointer;">
+      In differential topology, the classification of smooth manifolds relies heavily on characteristic classes and
+      cobordism theory. The Pontryagin classes, defined via the Chern-Weil homomorphism, provide obstructions to
+      smoothability of topological manifolds. For oriented 4-manifolds, the intersection form's signature and Euler
+      characteristic, related by the Hirzebruch signature theorem τ(M) = ⅓(7χ(M) + 11σ(M)), completely determine the
+      homeomorphism type in simply-connected cases. This framework, extended through Seiberg-Witten invariants,
+      revolutionized our understanding of 4-dimensional geometry.
+    </p>
+  </div>
+
+  <!-- Feedback Panel -->
+  <div class="feedback-section">
+    <div id="current-paragraph">Waiting for reading...</div>
+    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Was this paragraph difficult?</p>
+    <button class="feedback-btn btn-difficult" onclick="recordFeedback('difficult')">😰 Difficult</button>
+    <button class="feedback-btn btn-normal" onclick="recordFeedback('normal')">😊 Normal</button>
+    <hr style="margin: 15px 0;">
+    <button class="feedback-btn btn-export" onclick="exportMetrics()">📥 Export Metrics</button>
+    <button class="feedback-btn btn-export" onclick="showSummary()">📊 Show Summary</button>
+  </div>
+
+  <script type="module">
+    import { MetricsCollector } from './metrics-collector.js';
+
+    window.collector = new MetricsCollector();
+    window.currentParagraphKey = null;
+    window.currentDifficulty = null;
+
+    // Simulate some realistic metrics on load
+    function generateSimulatedData() {
+      console.log('[TEST] Generating simulated baseline data...');
+
+      // Simulate 20 difficulty detections
+      const scenarios = [
+        // Easy paragraphs (should be detected as normal)
+        { system: 'normal', user: 'normal', ratio: 1.05 },
+        { system: 'normal', user: 'normal', ratio: 1.12 },
+        { system: 'normal', user: 'difficult', ratio: 1.25 }, // FN
+
+        // Medium paragraphs
+        { system: 'normal', user: 'normal', ratio: 1.28 },
+        { system: 'difficult', user: 'normal', ratio: 1.35 }, // FP
+        { system: 'difficult', user: 'difficult', ratio: 1.42 },
+        { system: 'difficult', user: 'difficult', ratio: 1.58 },
+
+        // Hard paragraphs (should be detected as difficult)
+        { system: 'difficult', user: 'difficult', ratio: 1.78 },
+        { system: 'difficult', user: 'difficult', ratio: 1.92 },
+        { system: 'difficult', user: 'difficult', ratio: 2.15 },
+        { system: 'difficult', user: 'difficult', ratio: 2.38 },
+        { system: 'difficult', user: 'normal', ratio: 1.65 }, // FP
+
+        // Additional normal cases
+        { system: 'normal', user: 'normal', ratio: 1.08 },
+        { system: 'normal', user: 'normal', ratio: 1.18 },
+        { system: 'normal', user: 'normal', ratio: 1.22 },
+        { system: 'difficult', user: 'difficult', ratio: 1.88 },
+        { system: 'difficult', user: 'difficult', ratio: 2.05 },
+        { system: 'normal', user: 'normal', ratio: 1.15 },
+      ];
+
+      scenarios.forEach((s, i) => {
+        window.collector.recordDifficultyDetection({
+          systemPrediction: s.system,
+          userFeedback: s.user,
+          difficultyRatio: s.ratio,
+          paragraphKey: `simulated-p${i}`
+        });
+      });
+
+      // Simulate dwell times
+      for (let i = 0; i < 5; i++) {
+        window.collector.recordDwellTime({
+          dwellTime: 45000 + Math.random() * 10000,
+          expectedTime: 45000,
+          difficultyLevel: 'easy',
+          paragraphKey: `easy-${i}`
+        });
+      }
+
+      for (let i = 0; i < 5; i++) {
+        window.collector.recordDwellTime({
+          dwellTime: 60000 + Math.random() * 25000,
+          expectedTime: 60000,
+          difficultyLevel: 'medium',
+          paragraphKey: `medium-${i}`
+        });
+      }
+
+      for (let i = 0; i < 5; i++) {
+        window.collector.recordDwellTime({
+          dwellTime: 75000 + Math.random() * 60000,
+          expectedTime: 75000,
+          difficultyLevel: 'hard',
+          paragraphKey: `hard-${i}`
+        });
+      }
+
+      // Simulate LLM performance
+      for (let i = 0; i < 8; i++) {
+        window.collector.recordLLMPerformance({
+          mode: 'summary',
+          responseTime: 1800 + Math.random() * 1400,
+          success: Math.random() > 0.1
+        });
+      }
+
+      for (let i = 0; i < 5; i++) {
+        window.collector.recordLLMPerformance({
+          mode: 'audio',
+          responseTime: 1200 + Math.random() * 1300,
+          success: Math.random() > 0.05
+        });
+      }
+
+      console.log('[TEST] Simulated data generated successfully');
+    }
+
+    // Generate baseline data on load
+    generateSimulatedData();
+
+    // Manual paragraph selection (click to select)
+    window.selectParagraph = function(element, key) {
+      // Remove previous selection
+      document.querySelectorAll('p').forEach(p => {
+        p.style.backgroundColor = '';
+        p.style.border = '';
+      });
+
+      // Highlight selected paragraph
+      element.style.backgroundColor = 'rgba(255, 200, 100, 0.2)';
+      element.style.border = '2px solid #FF9800';
+
+      // Store selection
+      window.currentParagraphKey = key;
+      window.currentDifficulty = element.getAttribute('data-difficulty');
+
+      document.getElementById('current-paragraph').textContent =
+        `Selected: ${window.currentDifficulty.toUpperCase()} paragraph (${key})`;
+      document.getElementById('current-paragraph').style.color = '#4CAF50';
+      document.getElementById('current-paragraph').style.fontWeight = 'bold';
+    };
+
+    window.recordFeedback = function(userFeedback) {
+      if (!window.currentParagraphKey) {
+        alert('Please read a paragraph first!');
+        return;
+      }
+
+      // Get system prediction (simulate based on difficulty ratio threshold)
+      const ratio = Math.random() * 1.5 + 0.8; // Random ratio between 0.8-2.3
+      const systemPrediction = ratio >= 1.6 ? 'difficult' : 'normal';
+
+      window.collector.recordDifficultyDetection({
+        systemPrediction,
+        userFeedback,
+        difficultyRatio: ratio,
+        paragraphKey: window.currentParagraphKey
+      });
+
+      alert(`✅ Feedback recorded!\n\nSystem: ${systemPrediction}\nYou: ${userFeedback}\nRatio: ${ratio.toFixed(2)}`);
+
+      window.currentParagraphKey = null;
+      document.getElementById('current-paragraph').textContent = 'Waiting for reading...';
+    };
+
+    window.exportMetrics = function() {
+      const data = window.collector.exportMetrics();
+      alert('✅ Metrics exported to Downloads folder!');
+    };
+
+    window.showSummary = function() {
+      window.collector.printSummary();
+
+      const perf = window.collector.getPerformanceMetrics();
+      const dwell = window.collector.getDwellTimeStats();
+
+      alert(`📊 ReaRead Metrics Summary\n\n` +
+            `Performance:\n` +
+            `• Precision: ${perf.precision}\n` +
+            `• Recall: ${perf.recall}\n` +
+            `• F1-Score: ${perf.f1Score}\n` +
+            `• Accuracy: ${perf.accuracy}\n\n` +
+            `Dwell Time:\n` +
+            `• Easy: ${dwell.easy.avgDwellTime} (ratio: ${dwell.easy.avgRatio})\n` +
+            `• Medium: ${dwell.medium.avgDwellTime} (ratio: ${dwell.medium.avgRatio})\n` +
+            `• Hard: ${dwell.hard.avgDwellTime} (ratio: ${dwell.hard.avgRatio})\n\n` +
+            `Check console for detailed metrics!`);
+    };
+  </script>
+</body>
+</html>
