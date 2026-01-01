@@ -95,6 +95,7 @@ class CoordinateMapper {
 const coordinateMapper = new CoordinateMapper();
 
 // FAST LOOP: Update cursor (60 FPS)
+let debugCounter = 0;
 function handleGazeData(gazeData) {
   // Lazy-init debug panel when first gaze data arrives
   if (!debugPanel) {
@@ -105,24 +106,25 @@ function handleGazeData(gazeData) {
   try {
     const viewportCoords = coordinateMapper.screenToViewport(gazeData.x, gazeData.y);
 
-    if (viewportCoords.x >= 0 && viewportCoords.x <= window.innerWidth &&
-        viewportCoords.y >= 0 && viewportCoords.y <= window.innerHeight) {
-      gazeCursor.style.transform = `translate3d(${viewportCoords.x - 10}px, ${viewportCoords.y - 10}px, 0)`;
-      gazeCursor.style.display = 'block';
-
-      const targetOpacity = 0.3 + (gazeData.confidence * 0.5);
-      smoothedOpacity = smoothedOpacity * 0.85 + targetOpacity * 0.15;
-      gazeCursor.style.opacity = smoothedOpacity;
-
-      // Cache viewport coordinates for paragraph analysis
-      lastViewportGaze.x = viewportCoords.x;
-      lastViewportGaze.y = viewportCoords.y;
-
-      // GAZE STALE GUARD: Update timestamp only for valid viewport coordinates
-      lastGazeTimestamp = Date.now();
-    } else {
-      gazeCursor.style.display = 'none';
+    // Debug every 30 frames
+    if (debugCounter++ % 30 === 0) {
+      console.log(`[GAZE DEBUG] Screen: (${gazeData.x}, ${gazeData.y}) | Window: (${window.screenX}, ${window.screenY}) | Viewport: (${viewportCoords.x.toFixed(0)}, ${viewportCoords.y.toFixed(0)}) | Size: ${window.innerWidth}x${window.innerHeight} | DPR: ${window.devicePixelRatio}`);
     }
+
+    // Always show cursor for debugging
+    gazeCursor.style.transform = `translate3d(${viewportCoords.x - 10}px, ${viewportCoords.y - 10}px, 0)`;
+    gazeCursor.style.display = 'block';
+
+    const targetOpacity = 0.3 + (gazeData.confidence * 0.5);
+    smoothedOpacity = smoothedOpacity * 0.85 + targetOpacity * 0.15;
+    gazeCursor.style.opacity = smoothedOpacity;
+
+    // Cache viewport coordinates for paragraph analysis
+    lastViewportGaze.x = viewportCoords.x;
+    lastViewportGaze.y = viewportCoords.y;
+
+    // GAZE STALE GUARD: Update timestamp
+    lastGazeTimestamp = Date.now();
   } catch (error) {
     console.error('Error handling gaze data:', error);
   }

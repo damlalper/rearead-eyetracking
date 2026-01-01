@@ -152,6 +152,11 @@ class WebSocketServer:
                     # Run blocking calibration in separate thread
                     await asyncio.to_thread(self.gaze_streamer.calibrate)
                     await self.send_status(websocket, "calibration_completed")
+
+                    # Start gaze streaming after successful calibration
+                    if not self.gaze_streamer.is_streaming:
+                        logger.info("Starting gaze streaming after calibration")
+                        self.gaze_streamer.start_streaming()
                 except Exception as e:
                     logger.error(f"Calibration failed: {e}")
                     await self.send_status(websocket, "calibration_failed")

@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusDot = document.getElementById('status-dot');
   const statusText = document.getElementById('status-text');
   const btnReconnect = document.getElementById('btn-reconnect');
+  const btnDisconnect = document.getElementById('btn-disconnect');
   const btnCalibrate = document.getElementById('btn-calibrate');
   const toggleVisualization = document.getElementById('toggle-visualization');
   const toggleReadingAssist = document.getElementById('toggle-reading-assist');
@@ -18,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Event listeners
   btnReconnect.addEventListener('click', handleReconnect);
+  btnDisconnect.addEventListener('click', handleDisconnect);
   btnCalibrate.addEventListener('click', handleCalibrate);
   toggleVisualization.addEventListener('change', handleToggleVisualization);
   toggleReadingAssist.addEventListener('change', handleToggleReadingAssist);
@@ -80,6 +82,20 @@ document.addEventListener('DOMContentLoaded', () => {
         btnReconnect.textContent = 'Reconnect';
         updateConnectionStatus();
       }, 1000);
+    });
+  }
+
+  function handleDisconnect() {
+    btnDisconnect.disabled = true;
+    const originalText = btnDisconnect.querySelector('span').textContent;
+    btnDisconnect.querySelector('span').textContent = 'Disconnecting...';
+
+    chrome.runtime.sendMessage({ type: 'DISCONNECT' }, (response) => {
+      setTimeout(() => {
+        btnDisconnect.disabled = false;
+        btnDisconnect.querySelector('span').textContent = originalText;
+        updateConnectionStatus();
+      }, 500);
     });
   }
 

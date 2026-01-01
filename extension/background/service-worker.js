@@ -120,13 +120,15 @@ function handleMessage(data) {
 }
 
 function broadcastToContentScripts(message) {
-  // Only send to the currently active tab in the focused window
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (tabs.length > 0 && tabs[0].id) {
-      chrome.tabs.sendMessage(tabs[0].id, message).catch(() => {
-        // Ignore errors for tabs without content script
-      });
-    }
+  // Send to all tabs (not just active tab, since popup might be focused)
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach(tab => {
+      if (tab.id) {
+        chrome.tabs.sendMessage(tab.id, message).catch(() => {
+          // Ignore errors for tabs without content script
+        });
+      }
+    });
   });
 }
 
@@ -201,6 +203,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case 'RECONNECT':
       reconnectAttempts = 0;
       connectToCompanion();
+      sendResponse({ success: true });
+      break;
+
+    case 'DISCONNECT':
+      console.log('[DISCONNECT] User requested disconnect');
+      if (websocket && websocket.readyState === WebSocket.OPEN) {
+        websocket.close();
+      }
+      updateConnectionStatus('disconnected');
+      chrome.storage.local.set({ isCalibrated: false }); // Clear calibration
+      broadcastToContentScripts({ type: 'EXTENSION_DISABLED' });
       sendResponse({ success: true });
       break;
 

@@ -35,9 +35,9 @@ class CompanionApp:
                 root_logger = logging.getLogger()
                 root_logger.setLevel(logging.DEBUG)
 
-                # Console handler - only INFO and above
+                # Console handler - DEBUG level to see gaze coordinates
                 console = logging.StreamHandler()
-                console.setLevel(logging.INFO)
+                console.setLevel(logging.DEBUG)
                 console.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
 
                 # File handler - everything including DEBUG
