@@ -26,15 +26,19 @@ class WebSocketServer:
         # Send initial status with calibration info
         await self.send_initial_status(websocket)
 
-        # Trigger setup flow if needed (first connection or reconnect)
+        # Don't auto-start setup - wait for user to click "Start Calibration" button
         if self.gaze_streamer and self.gaze_streamer.needs_setup:
-            logger.info("Setup required - will trigger setup flow")
-            await self.trigger_setup_flow(websocket)
+            logger.info("Setup required - waiting for user to start calibration from extension popup")
 
     async def unregister(self, websocket: WebSocketServerProtocol):
         """Unregister a client connection."""
         self.clients.discard(websocket)
         logger.info(f"Client disconnected. Total clients: {len(self.clients)}")
+
+        # Cleanup model when last client disconnects
+        if len(self.clients) == 0 and self.gaze_streamer:
+            logger.info("All clients disconnected - cleaning up calibration model")
+            self.gaze_streamer.cleanup_model()
 
     async def send_initial_status(self, websocket: WebSocketServerProtocol):
         """Send initial status with calibration info when client connects."""
@@ -60,9 +64,18 @@ class WebSocketServer:
 
     async def send_status(self, websocket: WebSocketServerProtocol, status: str):
         """Send status message to a specific client."""
+        # Include calibration status in every status update
+        is_calibrated = False
+        is_tuned = False
+        if self.gaze_streamer:
+            is_calibrated = self.gaze_streamer.is_calibrated
+            is_tuned = self.gaze_streamer.is_tuned
+
         message = {
             "type": "status",
             "state": status,
+            "calibrated": is_calibrated,
+            "tuned": is_tuned,
             "timestamp": asyncio.get_event_loop().time()
         }
         try:
@@ -150,13 +163,22 @@ class WebSocketServer:
             if self.gaze_streamer:
                 try:
                     # Run blocking calibration in separate thread
-                    await asyncio.to_thread(self.gaze_streamer.calibrate)
-                    await self.send_status(websocket, "calibration_completed")
+                    success = await asyncio.to_thread(self.gaze_streamer.calibrate)
 
-                    # Start gaze streaming after successful calibration
-                    if not self.gaze_streamer.is_streaming:
-                        logger.info("Starting gaze streaming after calibration")
-                        self.gaze_streamer.start_streaming()
+                    if success:
+                        await self.send_status(websocket, "calibration_completed")
+
+                        # Enable tuning/smoother after calibration
+                        await asyncio.to_thread(self.gaze_streamer.tune_kalman)
+                        await self.send_status(websocket, "tuning_completed")
+
+                        # Mark setup as complete
+                        self.gaze_streamer.needs_setup = False
+                        await self.send_status(websocket, "setup_completed")
+                        logger.info("Setup flow completed - gaze streaming will start automatically")
+                    else:
+                        await self.send_status(websocket, "calibration_failed")
+                        logger.error("Calibration returned False")
                 except Exception as e:
                     logger.error(f"Calibration failed: {e}")
                     await self.send_status(websocket, "calibration_failed")

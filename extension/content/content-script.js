@@ -48,6 +48,31 @@ let smoothedOpacity = 0.6;
 let lastGazeTimestamp = 0;
 const MAX_GAZE_AGE_MS = 400;
 
+// REGION-BASED SOFT FALLBACK: Non-blocking confirmation signal
+let regionHitCounts = {}; // { [key]: count }
+
+// PROFILE-ADAPTIVE: Site-based behavior tuning
+let adaptiveConfig = {
+  regionPadY: 10, // Default padding for region-based fallback
+  lineDetectionEnabled: true // Whether to extract line-level data
+};
+
+// FOCUS MODE: Distraction detection
+let focusTracking = {
+  outOfBoundsCount: 0,
+  totalGazeCount: 0,
+  sessionStartTime: Date.now(),
+  lastFocusAlertTime: 0,
+  isEnabled: true
+};
+
+const FOCUS_CONFIG = {
+  OUT_OF_BOUNDS_THRESHOLD: 120, // 120 frames (~2 dakika @ 60fps)
+  ALERT_COOLDOWN_MS: 300000, // 5 dakika (300000ms)
+  POMODORO_WORK_MS: 1500000, // 25 dakika
+  POMODORO_BREAK_MS: 300000 // 5 dakika
+};
+
 function initializeGazeVisualization() {
   gazeCursor = document.createElement('div');
   gazeCursor.id = 'rearead-gaze-cursor';
@@ -111,6 +136,21 @@ function handleGazeData(gazeData) {
       console.log(`[GAZE DEBUG] Screen: (${gazeData.x}, ${gazeData.y}) | Window: (${window.screenX}, ${window.screenY}) | Viewport: (${viewportCoords.x.toFixed(0)}, ${viewportCoords.y.toFixed(0)}) | Size: ${window.innerWidth}x${window.innerHeight} | DPR: ${window.devicePixelRatio}`);
     }
 
+    // FOCUS MODE: Track in-bounds vs out-of-bounds gaze
+    if (focusTracking.isEnabled) {
+      focusTracking.totalGazeCount++;
+
+      const isInBounds = viewportCoords.x >= 0 && viewportCoords.x <= window.innerWidth &&
+                         viewportCoords.y >= 0 && viewportCoords.y <= window.innerHeight;
+
+      if (!isInBounds) {
+        focusTracking.outOfBoundsCount++;
+      }
+
+      // Check if distraction threshold exceeded
+      checkFocusLevel();
+    }
+
     // Always show cursor for debugging
     gazeCursor.style.transform = `translate3d(${viewportCoords.x - 10}px, ${viewportCoords.y - 10}px, 0)`;
     gazeCursor.style.display = 'block';
@@ -140,6 +180,22 @@ function calculateParagraphKey(viewportX, viewportY) {
     if (viewportX >= rect.left - PAD_X && viewportX <= rect.right + PAD_X &&
         viewportY >= rect.top - PAD_Y && viewportY < rect.bottom + PAD_Y) {
       return { key: rect.key, el: rect.el };
+    }
+  }
+  return null;
+}
+
+// REGION-BASED SOFT FALLBACK: Generous box hit detection (confirmation signal only)
+function getParagraphBoxHit(x, y) {
+  if (pxLineRects.length === 0) return null;
+
+  const PAD_X = 25; // More generous than point-based
+  const PAD_Y = adaptiveConfig.regionPadY; // PROFILE-ADAPTIVE: Use dynamic padding
+
+  for (const rect of pxLineRects) {
+    if (x >= rect.left - PAD_X && x <= rect.right + PAD_X &&
+        y >= rect.top - PAD_Y && y <= rect.bottom + PAD_Y) {
+      return rect.key;
     }
   }
   return null;
@@ -297,15 +353,45 @@ function analyzeReadingBehavior() {
     return;
   }
 
+  // PRIMARY DETECTION: Point-based paragraph detection (unchanged)
   const paraData = calculateParagraphKey(lastViewportGaze.x, lastViewportGaze.y);
+
+  // REGION-BASED SOFT FALLBACK: Update hit counts (non-blocking)
+  const regionKey = getParagraphBoxHit(lastViewportGaze.x, lastViewportGaze.y);
+  if (regionKey) {
+    regionHitCounts[regionKey] = (regionHitCounts[regionKey] || 0) + 1;
+  }
+
+  // FALLBACK LOGIC: Only use region if primary detection fails
+  let finalParaData = paraData;
   if (!paraData || !paraData.key) {
+    // Try region-based fallback if we have enough hits
+    if (regionKey && regionHitCounts[regionKey] >= 2) {
+      // Find the element for this key
+      const id = regionKey.split(':')[1];
+      const el = document.querySelector(`[data-rearead-id="${id}"]`);
+      if (el) {
+        finalParaData = { key: regionKey, el: el };
+        if (DEBUG_PARAGRAPH) {
+          console.log(`[REGION] Fallback paragraph hit: ${regionKey}`);
+        }
+      }
+    }
+  }
+
+  if (!finalParaData || !finalParaData.key) {
     // No paragraph detected - reset debug panel
     updateDebugPanel(null, -1, 0, '');
     return;
   }
 
-  const key = paraData.key;
+  const key = finalParaData.key;
   const now = Date.now();
+
+  // REGION-BASED SOFT FALLBACK: Decay counts on paragraph switch
+  if (key !== currentParagraphKey) {
+    regionHitCounts = {}; // Reset on paragraph change
+  }
 
   // Paragraph switching logic (unchanged)
   if (key !== currentParagraphKey) {
@@ -326,7 +412,7 @@ function analyzeReadingBehavior() {
     paragraphStartTime = now;
 
     // NEW: Extract lines when switching to new paragraph
-    currentParagraphLines = extractLinesFromParagraph(paraData.el);
+    currentParagraphLines = extractLinesFromParagraph(finalParaData.el);
     currentLineIndex = -1;
 
     if (DEBUG_PARAGRAPH) {
@@ -343,7 +429,7 @@ function analyzeReadingBehavior() {
   }
 
   // Update debug panel
-  const lineText = getLineText(paraData.el, currentLineIndex, currentParagraphLines.length);
+  const lineText = getLineText(finalParaData.el, currentLineIndex, currentParagraphLines.length);
   updateDebugPanel(key, currentLineIndex, currentParagraphLines.length, lineText);
 }
 
@@ -417,11 +503,22 @@ function addHelpButton(para, key) {
 
   helpBtn.style.cssText = `
     position: fixed; left: ${leftPos}px; top: ${paraRect.top}px; padding: 8px 16px;
-    background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer;
-    font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1000;
-    transition: top 0.1s ease-out;
+    background: #FF9B45; color: #0d0d0d; border: none; border-radius: 8px; cursor: pointer;
+    font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(255, 155, 69, 0.25); z-index: 1000;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   `;
 
+  helpBtn.onmouseover = () => {
+    helpBtn.style.background = '#ffaa5e';
+    helpBtn.style.transform = 'translateY(-2px)';
+    helpBtn.style.boxShadow = '0 6px 20px rgba(255, 155, 69, 0.35)';
+  };
+  helpBtn.onmouseout = () => {
+    helpBtn.style.background = '#FF9B45';
+    helpBtn.style.transform = 'translateY(0)';
+    helpBtn.style.boxShadow = '0 4px 12px rgba(255, 155, 69, 0.25)';
+  };
   helpBtn.onclick = () => requestLLMHelp(key);
   document.body.appendChild(helpBtn);
 }
@@ -506,11 +603,18 @@ function startPxAssist() {
 
   currentParagraphKey = null;
   paragraphStartTime = null;
+  regionHitCounts = {}; // Reset region counts
+
+  // Reset focus tracking
+  focusTracking.outOfBoundsCount = 0;
+  focusTracking.totalGazeCount = 0;
+  focusTracking.sessionStartTime = Date.now();
+  focusTracking.lastFocusAlertTime = 0;
 
   if (analysisIntervalId) clearInterval(analysisIntervalId);
   analysisIntervalId = setInterval(analyzeReadingBehavior, ANALYSIS_INTERVAL_MS);
 
-  console.log('[PX ASSIST] Started');
+  console.log('[PX ASSIST] Started (with region-based soft fallback + focus mode)');
 }
 
 function stopPxAssist() {
@@ -605,6 +709,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 });
 
 function initialize() {
+  // PROFILE-ADAPTIVE: Detect site structure and configure behavior
+  const siteProfile = detectSiteProfile();
+  configureReadingProfile(siteProfile);
+
   initializeGazeVisualization();
   // Debug panel will be created when first gaze data arrives
   // Auto-start PX Assist (always-on reading assistance)
@@ -657,5 +765,414 @@ function cleanupAll() {
   // Remove all help buttons
   document.querySelectorAll('.rearead-help-btn').forEach(btn => btn.remove());
 
+  // Remove focus mode alerts and overlays
+  const focusAlert = document.getElementById('rearead-focus-alert');
+  if (focusAlert) focusAlert.remove();
+
+  const pomodoroAlert = document.getElementById('rearead-pomodoro-alert');
+  if (pomodoroAlert) pomodoroAlert.remove();
+
+  const breakOverlay = document.getElementById('rearead-break-overlay');
+  if (breakOverlay) breakOverlay.remove();
+
+  const focusAnimations = document.getElementById('rearead-focus-animations');
+  if (focusAnimations) focusAnimations.remove();
+
   console.log('[CLEANUP] Complete');
+}
+
+// PROFILE-ADAPTIVE: Detect site structure once on load
+function detectSiteProfile() {
+  const paragraphs = document.querySelectorAll('p');
+  const articles = document.querySelectorAll('article');
+  const spans = document.querySelectorAll('span');
+
+  // Simple heuristic: article-heavy sites vs span-heavy sites
+  const hasArticleStructure = articles.length > 0;
+  const spanToParagraphRatio = paragraphs.length > 0 ? spans.length / paragraphs.length : 0;
+
+  // Static article sites: Clean markup, few spans per paragraph
+  if (hasArticleStructure && spanToParagraphRatio < 3) {
+    return "STATIC_ARTICLE";
+  }
+
+  // Dynamic publisher sites: Heavy DOM, many nested spans
+  return "DYNAMIC_PUBLISHER";
+}
+
+// PROFILE-ADAPTIVE: Configure behavior based on site profile
+function configureReadingProfile(profile) {
+  switch (profile) {
+    case "STATIC_ARTICLE":
+      // Tight padding for clean layouts (test pages, blogs)
+      adaptiveConfig.regionPadY = 15;
+      adaptiveConfig.lineDetectionEnabled = true;
+      console.log('[PROFILE] Static article mode: tight padding (15px), line detection ON');
+      break;
+
+    case "DYNAMIC_PUBLISHER":
+      // Generous padding for complex layouts (news sites, dynamic content)
+      adaptiveConfig.regionPadY = 25;
+      adaptiveConfig.lineDetectionEnabled = true;
+      console.log('[PROFILE] Dynamic publisher mode: generous padding (25px), line detection ON');
+      break;
+
+    default:
+      console.warn('[PROFILE] Unknown profile, using defaults');
+  }
+}
+
+// FOCUS MODE: Check if user is distracted
+function checkFocusLevel() {
+  // Only check every 60 frames (~1 second)
+  if (focusTracking.totalGazeCount % 60 !== 0) return;
+
+  const now = Date.now();
+  const distractionRatio = focusTracking.outOfBoundsCount / focusTracking.totalGazeCount;
+
+  // If out-of-bounds count exceeds threshold
+  if (focusTracking.outOfBoundsCount >= FOCUS_CONFIG.OUT_OF_BOUNDS_THRESHOLD) {
+    // Check cooldown - don't spam alerts
+    if (now - focusTracking.lastFocusAlertTime >= FOCUS_CONFIG.ALERT_COOLDOWN_MS) {
+      showFocusAlert(distractionRatio);
+      focusTracking.lastFocusAlertTime = now;
+    }
+    // Reset counters after alert
+    focusTracking.outOfBoundsCount = 0;
+    focusTracking.totalGazeCount = 0;
+  }
+
+  // Also check session duration for Pomodoro
+  const sessionDuration = now - focusTracking.sessionStartTime;
+  if (sessionDuration >= FOCUS_CONFIG.POMODORO_WORK_MS) {
+    showPomodoroBreakAlert();
+    // Reset session
+    focusTracking.sessionStartTime = now;
+    focusTracking.outOfBoundsCount = 0;
+    focusTracking.totalGazeCount = 0;
+  }
+}
+
+// FOCUS MODE: Show distraction alert
+function showFocusAlert(distractionRatio) {
+  const percentage = (distractionRatio * 100).toFixed(0);
+
+  const alert = document.createElement('div');
+  alert.id = 'rearead-focus-alert';
+  alert.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #181818;
+    border: 1px solid #2a2a2a;
+    color: #ffffff;
+    padding: 32px 48px;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    z-index: 999999;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    text-align: center;
+    animation: slideIn 0.3s ease-out;
+  `;
+
+  alert.innerHTML = `
+    <div style="font-size: 48px; margin-bottom: 16px; filter: drop-shadow(0 2px 8px rgba(255, 155, 69, 0.3));">🧠</div>
+    <div style="
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff, #FF9B45);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    ">
+      Dikkat Dağınıklığı Tespit Edildi
+    </div>
+    <div style="font-size: 16px; color: #e0e0e0; margin-bottom: 24px;">
+      Son 2 dakikada dikkatinin %${percentage}'i sayfa dışındaydı
+    </div>
+    <div style="font-size: 14px; color: #a0a0a0; margin-bottom: 24px;">
+      💡 5 dakika mola vermek ister misin?
+    </div>
+    <div style="display: flex; gap: 12px; justify-content: center;">
+      <button id="focus-alert-break" style="
+        padding: 12px 24px;
+        background: #FF9B45;
+        color: #0d0d0d;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      ">5 Dakika Mola</button>
+      <button id="focus-alert-continue" style="
+        padding: 12px 24px;
+        background: transparent;
+        color: #ffffff;
+        border: 1px solid #2a2a2a;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      ">Devam Et</button>
+    </div>
+  `;
+
+  // Add animation keyframes
+  if (!document.getElementById('rearead-focus-animations')) {
+    const style = document.createElement('style');
+    style.id = 'rearead-focus-animations';
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translate(-50%, -60%); opacity: 0; }
+        to { transform: translate(-50%, -50%); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translate(-50%, -50%); opacity: 1; }
+        to { transform: translate(-50%, -40%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(alert);
+
+  // Button handlers with hover effects
+  const breakBtn = document.getElementById('focus-alert-break');
+  const continueBtn = document.getElementById('focus-alert-continue');
+
+  breakBtn.onmouseover = () => {
+    breakBtn.style.background = '#ffaa5e';
+    breakBtn.style.transform = 'translateY(-2px)';
+    breakBtn.style.boxShadow = '0 6px 20px rgba(255, 155, 69, 0.35)';
+  };
+  breakBtn.onmouseout = () => {
+    breakBtn.style.background = '#FF9B45';
+    breakBtn.style.transform = 'translateY(0)';
+    breakBtn.style.boxShadow = 'none';
+  };
+  breakBtn.onclick = () => {
+    startBreakTimer();
+    removeFocusAlert(alert);
+  };
+
+  continueBtn.onmouseover = () => {
+    continueBtn.style.borderColor = '#FF9B45';
+    continueBtn.style.background = 'rgba(255, 155, 69, 0.08)';
+  };
+  continueBtn.onmouseout = () => {
+    continueBtn.style.borderColor = '#2a2a2a';
+    continueBtn.style.background = 'transparent';
+  };
+  continueBtn.onclick = () => {
+    removeFocusAlert(alert);
+  };
+
+  // Auto-dismiss after 10 seconds
+  setTimeout(() => {
+    if (alert.parentNode) removeFocusAlert(alert);
+  }, 10000);
+
+  console.log(`[FOCUS] Distraction alert shown - ${percentage}% out of bounds`);
+}
+
+// FOCUS MODE: Show Pomodoro break alert
+function showPomodoroBreakAlert() {
+  const alert = document.createElement('div');
+  alert.id = 'rearead-pomodoro-alert';
+  alert.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #181818;
+    border: 1px solid #2a2a2a;
+    color: #ffffff;
+    padding: 32px 48px;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    z-index: 999999;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    text-align: center;
+    animation: slideIn 0.3s ease-out;
+  `;
+
+  alert.innerHTML = `
+    <div style="font-size: 48px; margin-bottom: 16px; filter: drop-shadow(0 2px 8px rgba(255, 155, 69, 0.3));">⏰</div>
+    <div style="
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #ffffff, #FF9B45);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    ">
+      Pomodoro Tamamlandı!
+    </div>
+    <div style="font-size: 16px; color: #e0e0e0; margin-bottom: 24px;">
+      25 dakika verimli okuma yaptın 🎉
+    </div>
+    <div style="font-size: 14px; color: #a0a0a0; margin-bottom: 24px;">
+      💡 5 dakika mola zamanı!
+    </div>
+    <button id="pomodoro-alert-ok" style="
+      padding: 12px 32px;
+      background: #FF9B45;
+      color: #0d0d0d;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    ">Mola Ver</button>
+  `;
+
+  document.body.appendChild(alert);
+
+  const okBtn = document.getElementById('pomodoro-alert-ok');
+  okBtn.onmouseover = () => {
+    okBtn.style.background = '#ffaa5e';
+    okBtn.style.transform = 'translateY(-2px)';
+    okBtn.style.boxShadow = '0 6px 20px rgba(255, 155, 69, 0.35)';
+  };
+  okBtn.onmouseout = () => {
+    okBtn.style.background = '#FF9B45';
+    okBtn.style.transform = 'translateY(0)';
+    okBtn.style.boxShadow = 'none';
+  };
+  okBtn.onclick = () => {
+    startBreakTimer();
+    removeFocusAlert(alert);
+  };
+
+  // Auto-dismiss after 10 seconds
+  setTimeout(() => {
+    if (alert.parentNode) removeFocusAlert(alert);
+  }, 10000);
+
+  console.log('[FOCUS] Pomodoro session completed - 25 minutes');
+}
+
+// FOCUS MODE: Start break timer
+function startBreakTimer() {
+  const breakOverlay = document.createElement('div');
+  breakOverlay.id = 'rearead-break-overlay';
+  breakOverlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 999998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  `;
+
+  const breakTimer = document.createElement('div');
+  breakTimer.style.cssText = `
+    text-align: center;
+    color: #ffffff;
+  `;
+
+  breakTimer.innerHTML = `
+    <div style="font-size: 64px; margin-bottom: 24px; filter: drop-shadow(0 2px 8px rgba(255, 155, 69, 0.3));">☕</div>
+    <div style="
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #ffffff, #FF9B45);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    ">
+      Mola Zamanı
+    </div>
+    <div id="break-countdown" style="
+      font-size: 72px;
+      font-weight: 700;
+      font-family: 'SF Mono', 'Courier New', monospace;
+      margin-bottom: 24px;
+      color: #FF9B45;
+    ">
+      5:00
+    </div>
+    <div style="font-size: 18px; color: #a0a0a0; margin-bottom: 32px;">
+      Gözlerini dinlendir, su iç, biraz yürü 🚶
+    </div>
+    <button id="break-skip" style="
+      padding: 12px 32px;
+      background: transparent;
+      color: #ffffff;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    ">Molayı Bitir</button>
+  `;
+
+  breakOverlay.appendChild(breakTimer);
+  document.body.appendChild(breakOverlay);
+
+  // Countdown timer
+  let timeLeft = FOCUS_CONFIG.POMODORO_BREAK_MS / 1000; // seconds
+  const countdownEl = document.getElementById('break-countdown');
+
+  const interval = setInterval(() => {
+    timeLeft--;
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    countdownEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    if (timeLeft <= 0) {
+      clearInterval(interval);
+      endBreakTimer(breakOverlay);
+    }
+  }, 1000);
+
+  // Skip button with hover effects
+  const skipBtn = document.getElementById('break-skip');
+  skipBtn.onmouseover = () => {
+    skipBtn.style.borderColor = '#FF9B45';
+    skipBtn.style.background = 'rgba(255, 155, 69, 0.08)';
+  };
+  skipBtn.onmouseout = () => {
+    skipBtn.style.borderColor = '#2a2a2a';
+    skipBtn.style.background = 'transparent';
+  };
+  skipBtn.onclick = () => {
+    clearInterval(interval);
+    endBreakTimer(breakOverlay);
+  };
+
+  console.log('[FOCUS] Break timer started - 5 minutes');
+}
+
+// FOCUS MODE: End break timer
+function endBreakTimer(overlay) {
+  overlay.style.animation = 'slideOut 0.3s ease-out';
+  setTimeout(() => {
+    if (overlay.parentNode) overlay.remove();
+  }, 300);
+
+  // Reset focus tracking
+  focusTracking.sessionStartTime = Date.now();
+  focusTracking.outOfBoundsCount = 0;
+  focusTracking.totalGazeCount = 0;
+
+  console.log('[FOCUS] Break ended - new session started');
+}
+
+// FOCUS MODE: Remove alert with animation
+function removeFocusAlert(alert) {
+  alert.style.animation = 'slideOut 0.3s ease-out';
+  setTimeout(() => {
+    if (alert.parentNode) alert.remove();
+  }, 300);
 }

@@ -20,6 +20,7 @@ class GazeStreamer:
         self.confidence_threshold = confidence_threshold
         self.stream_frequency = stream_frequency
         self.is_running = False
+        self.is_streaming = False  # Flag for active gaze streaming
         self.estimator = None
         self.camera = None
         self.is_calibrated = False
@@ -229,6 +230,10 @@ class GazeStreamer:
 
     async def stream_loop(self, websocket_server):
         """Main streaming loop that continuously sends gaze data."""
+        if self.is_running:
+            logger.warning("Stream loop already running - skipping duplicate start")
+            return
+
         self.is_running = True
         frame_delay = 1.0 / self.stream_frequency
         was_ready = False  # Track when setup completes
@@ -241,6 +246,7 @@ class GazeStreamer:
             # Check if setup just completed
             if not self.needs_setup and self.is_calibrated and self.is_tuned and not was_ready:
                 logger.info(f"Setup complete - gaze streaming started at {self.stream_frequency} Hz")
+                self.is_streaming = True
                 was_ready = True
 
             # Only stream if setup is complete
@@ -260,6 +266,23 @@ class GazeStreamer:
         """Stop the gaze streaming loop."""
         self.is_running = False
         logger.debug("Gaze streaming stopped")
+
+    def cleanup_model(self):
+        """Delete the calibration model file and reset calibration state."""
+        try:
+            if os.path.isfile(self.model_path):
+                os.remove(self.model_path)
+                logger.info(f"Calibration model deleted: {self.model_path}")
+            else:
+                logger.debug("No calibration model to delete")
+
+            # Reset calibration flags
+            self.is_calibrated = False
+            self.is_tuned = False
+            self.needs_setup = False
+
+        except Exception as e:
+            logger.error(f"Error deleting calibration model: {e}")
 
     def cleanup(self):
         """Release camera and cleanup resources."""

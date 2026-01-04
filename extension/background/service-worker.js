@@ -12,18 +12,19 @@ let connectionStatus = 'disconnected'; // 'connecting', 'connected', 'disconnect
 // Initialize on install
 chrome.runtime.onInstalled.addListener(() => {
   console.log('ReaRead extension installed');
-  initializeConnection();
+  connectToCompanion();
 });
 
 // Initialize on startup
 chrome.runtime.onStartup.addListener(() => {
   console.log('ReaRead extension started');
-  initializeConnection();
+  connectToCompanion();
 });
 
-function initializeConnection() {
-  connectToCompanion();
-}
+// IMPORTANT: Also try to connect immediately when service worker loads
+// This ensures connection even if extension is already installed
+console.log('ReaRead background service worker loaded - attempting connection...');
+connectToCompanion();
 
 function connectToCompanion() {
   if (websocket && websocket.readyState === WebSocket.OPEN) {
@@ -84,26 +85,50 @@ function handleMessage(data) {
         break;
 
       case 'status':
-        console.log('Status update:', message.state, 'calibrated:', message.calibrated);
+        console.log('Status update:', message.state, 'calibrated:', message.calibrated, 'tuned:', message.tuned);
 
         // Store calibration status
         chrome.storage.local.set({
-          isCalibrated: message.calibrated
+          isCalibrated: message.calibrated,
+          isTuned: message.tuned,
+          setupState: message.state
         });
 
-        // If not calibrated, prompt user to calibrate
-        if (message.calibrated === false) {
-          console.warn('⚠️ System not calibrated! Calibration required.');
-
-          // Show notification (optional)
-          chrome.notifications.create({
-            type: 'basic',
-            iconUrl: 'icons/icon128.png',
-            title: 'ReaRead - Calibration Required',
-            message: 'Please open the extension popup and click "Start Calibration" to begin tracking.'
-          }).catch(() => {
-            // Notifications might be disabled
-          });
+        // Handle different setup states
+        switch (message.state) {
+          case 'setup_started':
+            console.log('🔧 Setup flow started - calibration window will open...');
+            break;
+          case 'setup_completed':
+            console.log('✅ Setup completed - system ready for tracking!');
+            chrome.notifications.create({
+              type: 'basic',
+              iconUrl: 'icons/icon128.png',
+              title: 'ReaRead - Setup Complete',
+              message: 'Eye tracking is now active and ready!'
+            }).catch(() => {});
+            break;
+          case 'setup_failed':
+            console.error('❌ Setup failed');
+            chrome.notifications.create({
+              type: 'basic',
+              iconUrl: 'icons/icon128.png',
+              title: 'ReaRead - Setup Failed',
+              message: 'Setup failed. Please try calibration manually from the popup.'
+            }).catch(() => {});
+            break;
+          case 'calibration_started':
+            console.log('📷 Calibration started...');
+            break;
+          case 'calibration_completed':
+            console.log('✅ Calibration completed');
+            break;
+          case 'tuning_started':
+            console.log('⚙️ Tuning KDE smoother...');
+            break;
+          case 'tuning_completed':
+            console.log('✅ Tuning completed');
+            break;
         }
         break;
 
@@ -260,5 +285,3 @@ chrome.runtime.onSuspend.addListener(() => {
   }
   stopHeartbeat();
 });
-
-console.log('ReaRead background service worker loaded');

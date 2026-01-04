@@ -130,6 +130,9 @@ class CompanionApp:
         if self.gaze_streamer:
             self.gaze_streamer.stop()
             self.gaze_streamer.cleanup()
+            # Cleanup calibration model on shutdown
+            logger.info("Cleaning up calibration model...")
+            self.gaze_streamer.cleanup_model()
 
         # Stop WebSocket server
         if self.ws_server:

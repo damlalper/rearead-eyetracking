@@ -15,13 +15,21 @@
   .DS_Store
 
 # IDE
-  .vscode/
-  .idea/
-  *.swp
+.vscode/
+.idea/
+*.swp
+.claude/
 
 # ReaRead specific
 users/
 companion/users/
+companion/logs/
 *.log
 config.local.json
 .env
+notes.txt
+video_prompt.md
+
+# Documentation builds
+docs/assets/
+docs/create_assets.py

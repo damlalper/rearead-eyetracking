@@ -32,16 +32,31 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Also check calibration status
-    chrome.storage.local.get(['isCalibrated'], (result) => {
+    // Also check calibration and setup status
+    chrome.storage.local.get(['isCalibrated', 'isTuned', 'setupState'], (result) => {
       const isCalibrated = result.isCalibrated;
-      if (isCalibrated === false) {
-        // Show warning if not calibrated
-        statusText.textContent = '⚠️ Not calibrated - Please calibrate first!';
-        statusText.style.color = '#ff9800';
-      } else if (isCalibrated === true) {
+      const isTuned = result.isTuned;
+      const setupState = result.setupState;
+
+      // Update button and status based on setup state
+      if (setupState === 'setup_started' || setupState === 'calibration_started' || setupState === 'tuning_started') {
+        statusText.textContent = '🔧 Setup in progress - please wait...';
+        statusText.style.color = '#2196f3';
+        btnCalibrate.disabled = true;
+        btnCalibrate.textContent = 'Setup Running...';
+      } else if (setupState === 'setup_completed' || (isCalibrated && isTuned)) {
         statusText.textContent = '✅ System ready for tracking';
         statusText.style.color = '#4caf50';
+        btnCalibrate.disabled = false;
+        btnCalibrate.textContent = 'Recalibrate';
+      } else if (isCalibrated === false) {
+        statusText.textContent = '⚠️ Calibration required - click button below';
+        statusText.style.color = '#ff9800';
+        btnCalibrate.disabled = false;
+        btnCalibrate.textContent = 'Start Calibration';
+      } else {
+        btnCalibrate.disabled = false;
+        btnCalibrate.textContent = 'Start Calibration';
       }
     });
   }

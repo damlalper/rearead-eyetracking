@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ReaRead - Webcam-based eye tracking for reading analysis. Understand how you read with AI-powered insights.">
+    <meta name="keywords" content="eye tracking, reading analysis, browser extension, AI, education">
+    <title>ReaRead - Eye-Tracking Reading Analysis</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                ReaRead
+            </div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#use-cases">Use Cases</a></li>
+                <li><a href="#team">Team</a></li>
+                <li><a href="https://github.com/damlalper/rearead-eyetracking" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="badge">
+                <span class="badge-dot"></span>
+                Open Source • Beta v0.1.0
+            </div>
+            <h1>
+                Transform how you <span class="gradient-text">read and learn</span>
+            </h1>
+            <p class="hero-description">
+                Advanced webcam-based eye tracking meets AI. Understand your reading patterns,
+                identify difficult paragraphs, and get instant AI assistance—all without special hardware.
+            </p>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number">30 FPS</div>
+                    <div class="stat-label">Real-time tracking</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">468</div>
+                    <div class="stat-label">Facial landmarks</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">Free</div>
+                    <div class="stat-label">& Open Source</div>
+                </div>
+            </div>
+            <div class="cta-buttons">
+                <a href="#" class="btn btn-primary" id="download-btn">
+                    Download Extension
+                    <span>→</span>
+                </a>
+                <a href="https://github.com/damlalper/rearead-eyetracking" class="btn btn-secondary" target="_blank">
+                    View on GitHub
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div class="demo-window demo-window-large">
+                <div class="window-header">
+                    <div class="window-dot"></div>
+                    <div class="window-dot"></div>
+                    <div class="window-dot"></div>
+                </div>
+                <div class="window-content">
+                    <svg class="icon-svg-large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <div class="gaze-point" style="top: 40%; left: 60%;"></div>
+                    <div class="gaze-point" style="top: 60%; left: 30%; animation-delay: 0.5s;"></div>
+                </div>
+            </div>
+            <div class="demo-window demo-window-small">
+                <div class="window-header">
+                    <div class="window-dot"></div>
+                    <div class="window-dot"></div>
+                    <div class="window-dot"></div>
+                </div>
+                <div class="window-content">
+                    <svg class="icon-svg-large" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M3 3v18h18"></path>
+                        <path d="M18 17V9"></path>
+                        <path d="M13 17V5"></path>
+                        <path d="M8 17v-3"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Solution Section -->
+    <section class="problem-solution">
+        <div class="section-header">
+            <div class="section-label">The Challenge</div>
+            <h2 class="section-title">Reading is complex, but tracking shouldn't be</h2>
+        </div>
+
+        <div class="ps-grid">
+            <div class="ps-card ps-problem">
+                <div class="ps-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </div>
+                <h3>Traditional Eye Tracking</h3>
+                <ul>
+                    <li>Requires expensive hardware ($500-$5000)</li>
+                    <li>Complex setup and calibration</li>
+                    <li>Limited to lab environments</li>
+                    <li>Not accessible for everyday use</li>
+                    <li>No real-time assistance</li>
+                </ul>
+            </div>
+
+            <div class="ps-card ps-solution">
+                <div class="ps-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h3>ReaRead Solution</h3>
+                <ul>
+                    <li>Uses your existing webcam</li>
+                    <li>Automatic calibration in 20 seconds</li>
+                    <li>Works on any webpage you visit</li>
+                    <li>Free and open source</li>
+                    <li>AI-powered reading assistance</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <div class="section-label">Features</div>
+            <h2 class="section-title">Professional eye tracking, now in your browser</h2>
+            <p class="section-description">
+                Research-grade technology powered by computer vision, machine learning, and AI.
+            </p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </div>
+                <h3>Real-time Gaze Tracking</h3>
+                <p>Track your gaze at 30 FPS using MediaPipe FaceMesh with 468 facial landmarks. See exactly where you're looking on the page.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"></path>
+                        <path d="M8.5 8.5v.01"></path>
+                        <path d="M16 12v.01"></path>
+                        <path d="M12 16v.01"></path>
+                    </svg>
+                </div>
+                <h3>AI Reading Assistant</h3>
+                <p>Struggling with a paragraph? Get instant summaries and simplifications powered by Llama 3.3 70B language model.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 20V10"></path>
+                        <path d="M12 20V4"></path>
+                        <path d="M6 20v-6"></path>
+                    </svg>
+                </div>
+                <h3>Reading Analytics</h3>
+                <p>Comprehensive metrics including words per minute, fixation duration, regression patterns, and reading speed over time.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="22" y1="12" x2="18" y2="12"></line>
+                        <line x1="6" y1="12" x2="2" y2="12"></line>
+                        <line x1="12" y1="6" x2="12" y2="2"></line>
+                        <line x1="12" y1="22" x2="12" y2="18"></line>
+                    </svg>
+                </div>
+                <h3>Smart Fixation Detection</h3>
+                <p>I-DT algorithm with KDE smoothing identifies exactly which words and paragraphs you focus on most.</p>
+            </div>
+
+            <div class="feature-card has-bg bg-heatmap">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a5 5 0 0 0-5 5v2a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5z"></path>
+                        <path d="M12 14v4"></path>
+                    </svg>
+                </div>
+                <h3>Difficulty Heatmaps</h3>
+                <p>Visual overlay showing which parts of text were challenging based on your fixation patterns and re-reading behavior.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                </div>
+                <h3>Advanced Signal Processing</h3>
+                <p>Kalman filters with auto-tuning and KDE smoothing ensure accurate, jitter-free tracking even with head movement.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 10v6M2 10v6"></path>
+                        <path d="M22 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4"></path>
+                    </svg>
+                </div>
+                <h3>Learning Insights</h3>
+                <p>Understand your reading behavior: identify patterns, track improvement, and optimize your learning strategy.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <h3>Privacy First</h3>
+                <p>All processing happens locally on your machine. No data sent to servers. Your reading habits stay private.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                </div>
+                <h3>Works Everywhere</h3>
+                <p>Chrome extension works on any webpage: articles, PDFs, research papers, documentation, and more.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases Section -->
+    <section class="use-cases" id="use-cases">
+        <div class="section-header">
+            <div class="section-label">Use Cases</div>
+            <h2 class="section-title">Built for everyone who reads</h2>
+        </div>
+
+        <div class="use-cases-grid">
+            <div class="use-case-card">
+                <div class="use-case-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 10v6M2 10v6"></path>
+                        <path d="M22 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4"></path>
+                    </svg>
+                </div>
+                <div class="use-case-content">
+                    <h3>Students & Researchers</h3>
+                    <p>Analyze your reading patterns when studying. Get AI help on complex academic papers. Track comprehension and improve study efficiency.</p>
+                </div>
+            </div>
+
+            <div class="use-case-card">
+                <div class="use-case-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                </div>
+                <div class="use-case-content">
+                    <h3>Professionals</h3>
+                    <p>Speed read through documents and reports. Identify important sections automatically. Get quick summaries of dense technical content.</p>
+                </div>
+            </div>
+
+            <div class="use-case-card">
+                <div class="use-case-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                </div>
+                <div class="use-case-content">
+                    <h3>Language Learners</h3>
+                    <p>See which words and phrases slow you down. Get instant translations and explanations. Track reading speed improvement over time.</p>
+                </div>
+            </div>
+
+            <div class="use-case-card">
+                <div class="use-case-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </div>
+                <div class="use-case-content">
+                    <h3>UX Researchers</h3>
+                    <p>Test content readability. Analyze user reading patterns on your website. Optimize text layout and hierarchy based on eye tracking data.</p>
+                </div>
+            </div>
+
+            <div class="use-case-card">
+                <div class="use-case-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    </svg>
+                </div>
+                <div class="use-case-content">
+                    <h3>Accessibility</h3>
+                    <p>Helpful for users with reading difficulties. Visual tracking helps maintain focus. AI assistance breaks down complex text.</p>
+                </div>
+            </div>
+
+            <div class="use-case-card">
+                <div class="use-case-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                        <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                        <path d="M2 2l7.586 7.586"></path>
+                        <circle cx="11" cy="11" r="2"></circle>
+                    </svg>
+                </div>
+                <div class="use-case-content">
+                    <h3>Content Creators</h3>
+                    <p>Test your own writing. See where readers might struggle. Optimize content for better engagement and comprehension.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-header">
+            <div class="section-label">Setup</div>
+            <h2 class="section-title">Get started in under 5 minutes</h2>
+            <p class="section-description">
+                Simple installation with automatic calibration and intelligent tuning.
+            </p>
+        </div>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Install the Extension</h3>
+                <p>Add ReaRead to Chrome from the GitHub repository. Load it as an unpacked extension. Works on any webpage you visit—articles, PDFs, documentation, and more.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Run Companion App</h3>
+                <p>Download and run the Python companion app. It handles eye tracking and ML inference locally on your machine. Supports Windows, macOS, and Linux.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Quick Calibration</h3>
+                <p>Follow the 9-point calibration wizard (takes 20 seconds). The system builds a personalized gaze estimation model using Ridge Regression trained on your facial features.</p>
+            </div>
+
+            <div class="step">
+                <div class="step-number">4</div>
+                <h3>Start Reading</h3>
+                <p>Open any article and watch real-time gaze tracking. Difficult paragraphs are automatically highlighted. Click for AI assistance, summaries, or simplifications.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section class="tech-stack">
+        <div class="section-header">
+            <div class="section-label">Technology</div>
+            <h2 class="section-title">Built on cutting-edge research</h2>
+            <p class="section-description">
+                Combining computer vision, machine learning, and large language models.
+            </p>
+        </div>
+
+        <div class="tech-grid">
+            <div class="tech-item">
+                <div class="tech-label">MediaPipe FaceMesh</div>
+                <div class="tech-desc">468-point facial landmark detection</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-label">Ridge Regression</div>
+                <div class="tech-desc">ML-based gaze estimation</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-label">Kalman Filters</div>
+                <div class="tech-desc">Auto-tuned noise reduction</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-label">KDE Smoothing</div>
+                <div class="tech-desc">Gaussian kernel smoothing</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-label">I-DT Algorithm</div>
+                <div class="tech-desc">Fixation detection</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-label">Llama 3.3 70B</div>
+                <div class="tech-desc">AI text assistance</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-label">WebSocket</div>
+                <div class="tech-desc">Real-time streaming</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-label">Python + OpenCV</div>
+                <div class="tech-desc">Computer vision backend</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison -->
+    <section class="comparison">
+        <div class="section-header">
+            <div class="section-label">Comparison</div>
+            <h2 class="section-title">ReaRead vs Traditional Eye Tracking</h2>
+        </div>
+
+        <div class="comparison-table">
+            <div class="comparison-row comparison-header">
+                <div class="comparison-cell"></div>
+                <div class="comparison-cell"><strong>Traditional</strong></div>
+                <div class="comparison-cell"><strong>ReaRead</strong></div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Hardware Cost</div>
+                <div class="comparison-cell">$500-$5000</div>
+                <div class="comparison-cell">$0 (Webcam)</div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Setup Time</div>
+                <div class="comparison-cell">30-60 minutes</div>
+                <div class="comparison-cell">20 seconds</div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Works Anywhere</div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small x-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small check-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">AI Assistance</div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small x-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small check-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Real-time Analytics</div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small check-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small check-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Open Source</div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small x-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small check-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section class="team" id="team">
+        <div class="section-header">
+            <div class="section-label">Our Team</div>
+            <h2 class="section-title">Meet the Developers</h2>
+            <p class="section-description">Computer Engineering Students & Open Source Enthusiasts</p>
+        </div>
+        
+        <div class="team-grid">
+            <div class="team-card">
+                <div class="team-avatar">
+                    <span>D</span>
+                </div>
+                <h3>Damla Nur Alper</h3>
+                <p class="team-role">Co-Founder & Developer</p>
+                <div class="team-links">
+                    <a href="https://www.linkedin.com/in/damla-nur-alper-225a1730b" target="_blank" class="team-link">
+                        <svg class="icon-svg-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                            <rect x="2" y="9" width="4" height="12"></rect>
+                            <circle cx="4" cy="4" r="2"></circle>
+                        </svg>
+                        LinkedIn
+                    </a>
+                    <a href="https://github.com/damlalper" target="_blank" class="team-link">
+                        <svg class="icon-svg-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                        </svg>
+                        GitHub
+                    </a>
+                </div>
+            </div>
+
+            <div class="team-card">
+                <div class="team-avatar">
+                    <span>S</span>
+                </div>
+                <h3>Sidal Deniz Bingöl</h3>
+                <p class="team-role">Co-Founder & Developer</p>
+                <div class="team-links">
+                    <a href="https://www.linkedin.com/in/sidal-deniz-bing%C3%B6l-139950285/" target="_blank" class="team-link">
+                        <svg class="icon-svg-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                            <rect x="2" y="9" width="4" height="12"></rect>
+                            <circle cx="4" cy="4" r="2"></circle>
+                        </svg>
+                        LinkedIn
+                    </a>
+                    <a href="https://github.com/sidalbingl" target="_blank" class="team-link">
+                        <svg class="icon-svg-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                        </svg>
+                        GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2>Ready to transform your reading?</h2>
+        <p>Join the future of reading analytics. Free forever, open source.</p>
+        <div class="cta-buttons" style="justify-content: center;">
+            <a href="#" class="btn btn-primary" id="download-btn-2">
+                Download Extension
+                <span>→</span>
+            </a>
+            <a href="https://github.com/damlalper/rearead-eyetracking" class="btn btn-secondary" target="_blank">
+                View Documentation
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>ReaRead</h4>
+                <p>Professional-grade eye tracking for everyone. Built with computer vision, machine learning, and AI. Developed as a Computer Engineering graduation project.</p>
+            </div>
+
+            <div class="footer-section">
+                <h4>Product</h4>
+                <ul class="footer-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                    <li><a href="#use-cases">Use Cases</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <ul class="footer-links">
+                    <li><a href="https://github.com/damlalper/rearead-eyetracking" target="_blank">GitHub</a></li>
+                    <li><a href="https://github.com/damlalper/rearead-eyetracking/blob/main/README.md" target="_blank">Documentation</a></li>
+                    <li><a href="https://github.com/damlalper/rearead-eyetracking/issues" target="_blank">Support</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <ul class="footer-links">
+                    <li><a href="#">Privacy</a></li>
+                    <li><a href="#">Terms</a></li>
+                    <li><a href="#">License</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2025 ReaRead. Open Source Project. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
