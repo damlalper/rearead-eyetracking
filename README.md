@@ -1389,9 +1389,9 @@ class DwellTimeTracker {
 
 ## Acknowledgments
 
-**Developed by**: [Your Name/Team]
-**Institution**: [Your University]
-**Supervisor**: [Advisor Name]
+**Developed by**: [Sidal Deniz BİNGÖL & Damla Nur ALPER]
+**Institution**: [İzmir University Bakircay]
+**Supervisor**: [Doç. Dr. Gonca Gökçe Menekşe DALVEREN]
 **Course**: Computer Engineering Graduation Project
 **Academic Year**: 2025-2026
 
@@ -1414,12 +1414,7 @@ class DwellTimeTracker {
 **Repository**: https://github.com/damlalper/ReaRead2
 **Branch**: `feature/llm-assistance-improvements-3`
 **Issues**: https://github.com/damlalper/ReaRead2/issues
-
-## Developers
-
-**Damla Nur Alper** : https://github.com/damlalper
-        &&
-**Sidal Deniz Bingöl** : https://github.com/sidalbingl
+**Profiles**: https://github.com/damlalper & https://github.com/sidalbingl
 ---
 
 **Last Updated**: January 4, 2026
