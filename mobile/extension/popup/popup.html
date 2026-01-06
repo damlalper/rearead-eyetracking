@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReaRead Mobile</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">📖</div>
+      <div class="title">
+        <h1>ReaRead Mobile</h1>
+        <p>Eye Tracking for Firefox Mobile</p>
+      </div>
+    </div>
+
+    <!-- Status Card -->
+    <div class="card status-card">
+      <div class="status-icon" id="status-icon">●</div>
+      <div class="status-text">
+        <div class="status-label">Status</div>
+        <div class="status-value" id="status-value">Not Started</div>
+      </div>
+    </div>
+
+    <!-- Tracking Method -->
+    <div class="card info-card">
+      <div class="info-row">
+        <span class="info-label">Method</span>
+        <span class="info-value" id="tracking-method">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Battery</span>
+        <span class="info-value" id="battery-level">-</span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn btn-primary" id="start-btn" disabled>
+        Start Focus Mode
+      </button>
+      <button class="btn btn-secondary" id="stop-btn" style="display: none;">
+        Stop Tracking
+      </button>
+    </div>
+
+    <!-- Help Text -->
+    <div class="help-text">
+      <p>
+        <strong>How it works:</strong><br>
+        Open any webpage and tap "Start Focus Mode" to begin eye tracking.
+        ReaRead will analyze your reading behavior and offer help when needed.
+      </p>
+      <p>
+        <strong>Privacy:</strong> All tracking happens locally. No data is sent to servers.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <a href="#" id="settings-link">Settings</a>
+      <span>•</span>
+      <a href="#" id="help-link">Help</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
