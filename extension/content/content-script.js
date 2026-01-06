@@ -38,6 +38,35 @@ let paragraphStartTime = null;
 let paragraphDwellTimes = {};
 let paragraphDifficultyLogged = {};
 
+// ANALYTICS: Session tracking for dashboard
+let analyticsSession = {
+  sessionId: null,
+  startTime: null,
+  url: null,
+  title: null,
+  gazePoints: [], // { timestamp, x, y, isInBounds }
+  paragraphMetrics: {}, // { [paragraphKey]: { dwellTime, difficultyRatio, revisits, llmUsed } }
+  llmUsage: [], // { timestamp, mode, paragraphKey }
+  focusEvents: [] // { timestamp, type, data }
+};
+
+// AUTO READ MODE: Göz takibiyle otomatik paragraf okuma
+let autoReadMode = {
+  enabled: false,
+  language: 'auto',
+  currentAudio: null,
+  lastReadParagraph: null,
+  readQueue: [],
+  isReading: false,
+  dwellThreshold: 2000 // 2 saniye paragrafa bakınca oku
+};
+
+// GESTURE CONTROL: Get Help butonu için çift kırpma tespiti
+let gestureState = {
+  lastDoubleBlink: 0,
+  doubleBlinkCooldown: 1000 // 1 saniye cooldown
+};
+
 // Fast/slow loops
 let lastViewportGaze = { x: 0, y: 0 };
 let analysisIntervalId = null;
@@ -63,11 +92,23 @@ let focusTracking = {
   totalGazeCount: 0,
   sessionStartTime: Date.now(),
   lastFocusAlertTime: 0,
-  isEnabled: true
+  isEnabled: true,
+  // Akıllı kombinasyon için ek tracking
+  gazeHistory: [], // { timestamp, isOutOfBounds }
+  consecutiveOutOfBoundsMs: 0,
+  lastGazeState: null, // 'in' veya 'out'
+  consecutiveOutStartTime: null
 };
 
 const FOCUS_CONFIG = {
-  OUT_OF_BOUNDS_THRESHOLD: 120, // 120 frames (~2 dakika @ 60fps)
+  // AKILLI KOMBİNASYON (Seçenek 3 - En İyi)
+  // Kriter 1: Son 5 dakikada %40'tan fazla dışarıda
+  HISTORY_WINDOW_MS: 300000, // 5 dakika
+  DISTRACTION_THRESHOLD_PERCENT: 40, // %40
+
+  // Kriter 2: Üst üste 30 saniye dışarıda
+  CONSECUTIVE_OUT_THRESHOLD_MS: 30000, // 30 saniye
+
   ALERT_COOLDOWN_MS: 300000, // 5 dakika (300000ms)
   POMODORO_WORK_MS: 1500000, // 25 dakika
   POMODORO_BREAK_MS: 300000 // 5 dakika
@@ -107,6 +148,105 @@ function initializeDebugPanel() {
   console.log('Debug panel initialized');
 }
 
+// CAMERA PREVIEW: Initialize camera preview for demo/presentation
+let cameraPreview = null;
+let cameraStream = null;
+
+async function initializeCameraPreview() {
+  try {
+    // Request camera permission
+    console.log('[CAMERA] Requesting camera access...');
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        facingMode: 'user'
+      }
+    });
+
+    // Create video element for preview
+    cameraPreview = document.createElement('video');
+    cameraPreview.id = 'rearead-camera-preview';
+    cameraPreview.autoplay = true;
+    cameraPreview.playsInline = true;
+    cameraPreview.muted = true;
+    cameraPreview.srcObject = cameraStream;
+
+    cameraPreview.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 240px;
+      height: 180px;
+      border-radius: 12px;
+      border: 2px solid #4CAF50;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      z-index: 999997;
+      object-fit: cover;
+      transform: scaleX(-1);
+    `;
+
+    // Add label
+    const label = document.createElement('div');
+    label.style.cssText = `
+      position: fixed;
+      bottom: 210px;
+      left: 20px;
+      background: rgba(76, 175, 80, 0.9);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 999997;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    `;
+    label.textContent = '👁️ Eye Tracking Active';
+    label.id = 'rearead-camera-label';
+
+    document.body.appendChild(cameraPreview);
+    document.body.appendChild(label);
+
+    console.log('[CAMERA] Camera preview initialized');
+  } catch (error) {
+    console.error('[CAMERA] Failed to access camera:', error);
+    // Show error notification
+    showCameraError(error.message);
+  }
+}
+
+function showCameraError(message) {
+  const errorNotif = document.createElement('div');
+  errorNotif.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(244, 67, 54, 0.95);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 999997;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    max-width: 300px;
+  `;
+  errorNotif.innerHTML = `
+    <div style="font-weight: 600; margin-bottom: 4px;">📷 Camera Access Required</div>
+    <div style="font-size: 12px; opacity: 0.9;">${message}</div>
+  `;
+
+  document.body.appendChild(errorNotif);
+
+  setTimeout(() => {
+    errorNotif.style.transition = 'opacity 0.3s';
+    errorNotif.style.opacity = '0';
+    setTimeout(() => errorNotif.remove(), 300);
+  }, 5000);
+}
+
 // Coordinate transformation: Screen → Viewport
 class CoordinateMapper {
   screenToViewport(screenX, screenY) {
@@ -127,6 +267,23 @@ function handleGazeData(gazeData) {
     initializeDebugPanel();
   }
 
+  // Handle double blink gesture - trigger Get Help button
+  if (gazeData.gestures && gazeData.gestures.double_blink) {
+    const now = Date.now();
+    if (now - gestureState.lastDoubleBlink > gestureState.doubleBlinkCooldown) {
+      gestureState.lastDoubleBlink = now;
+      handleDoubleBlink();
+    }
+  }
+
+  // Forward gestures to llm-helper for modal navigation
+  if (gazeData.gestures) {
+    window.postMessage({
+      type: 'REAREAD_GESTURE',
+      gesture: gazeData.gestures
+    }, '*');
+  }
+
   if (!gazeCursor || !isVisualizationEnabled) return;
   try {
     const viewportCoords = coordinateMapper.screenToViewport(gazeData.x, gazeData.y);
@@ -138,11 +295,51 @@ function handleGazeData(gazeData) {
 
     // FOCUS MODE: Track in-bounds vs out-of-bounds gaze
     if (focusTracking.isEnabled) {
-      focusTracking.totalGazeCount++;
-
+      const now = Date.now();
       const isInBounds = viewportCoords.x >= 0 && viewportCoords.x <= window.innerWidth &&
                          viewportCoords.y >= 0 && viewportCoords.y <= window.innerHeight;
 
+      // ANALYTICS: Track gaze point (sample every 10 frames to reduce data)
+      if (analyticsSession.sessionId && debugCounter % 10 === 0) {
+        analyticsSession.gazePoints.push({
+          timestamp: now,
+          x: viewportCoords.x,
+          y: viewportCoords.y,
+          isInBounds: isInBounds
+        });
+      }
+
+      // Gaze geçmişine ekle
+      focusTracking.gazeHistory.push({
+        timestamp: now,
+        isOutOfBounds: !isInBounds
+      });
+
+      // Eski kayıtları temizle (5 dakikadan eski olanlar)
+      focusTracking.gazeHistory = focusTracking.gazeHistory.filter(
+        entry => now - entry.timestamp < FOCUS_CONFIG.HISTORY_WINDOW_MS
+      );
+
+      // Üst üste dışarıda kalma süresini takip et
+      if (!isInBounds) {
+        if (focusTracking.lastGazeState !== 'out') {
+          // İlk defa dışarı çıktı
+          focusTracking.consecutiveOutStartTime = now;
+          focusTracking.lastGazeState = 'out';
+        }
+        // Consecutıve süreyi güncelle
+        focusTracking.consecutiveOutOfBoundsMs = now - focusTracking.consecutiveOutStartTime;
+      } else {
+        if (focusTracking.lastGazeState !== 'in') {
+          // İçeri girdi, consecutive süreyi sıfırla
+          focusTracking.consecutiveOutOfBoundsMs = 0;
+          focusTracking.consecutiveOutStartTime = null;
+          focusTracking.lastGazeState = 'in';
+        }
+      }
+
+      // Eski sistemi de koru (backward compatibility)
+      focusTracking.totalGazeCount++;
       if (!isInBounds) {
         focusTracking.outOfBoundsCount++;
       }
@@ -404,6 +601,20 @@ function analyzeReadingBehavior() {
         console.log(`[DWELL] ${currentParagraphKey}: ${paragraphDwellTimes[currentParagraphKey]}ms`);
       }
 
+      // ANALYTICS: Update paragraph metrics
+      if (analyticsSession.sessionId) {
+        if (!analyticsSession.paragraphMetrics[currentParagraphKey]) {
+          analyticsSession.paragraphMetrics[currentParagraphKey] = {
+            dwellTime: 0,
+            difficultyRatio: 0,
+            revisits: 0,
+            llmUsed: false
+          };
+        }
+        analyticsSession.paragraphMetrics[currentParagraphKey].dwellTime += dwellTime;
+        analyticsSession.paragraphMetrics[currentParagraphKey].revisits++;
+      }
+
       const prevKey = currentParagraphKey;
       requestAnimationFrame(() => updateParagraphHighlight(prevKey));
     }
@@ -414,6 +625,11 @@ function analyzeReadingBehavior() {
     // NEW: Extract lines when switching to new paragraph
     currentParagraphLines = extractLinesFromParagraph(finalParaData.el);
     currentLineIndex = -1;
+
+    // AUTO READ: Check if we should auto-read this paragraph
+    if (autoReadMode.enabled && key !== autoReadMode.lastReadParagraph) {
+      checkAndReadParagraph(key, finalParaData.el);
+    }
 
     if (DEBUG_PARAGRAPH) {
       console.log(`[READING] Switched to: ${key}, lines: ${currentParagraphLines.length}`);
@@ -463,6 +679,11 @@ function updateParagraphHighlight(key) {
 
   let targetBg = '';
   let needsHelpButton = false;
+
+  // ANALYTICS: Update difficulty ratio
+  if (analyticsSession.sessionId && analyticsSession.paragraphMetrics[key]) {
+    analyticsSession.paragraphMetrics[key].difficultyRatio = difficultyRatio;
+  }
 
   if (difficultyRatio >= 1.6) {
     targetBg = 'rgba(255, 230, 150, 0.30)';
@@ -610,6 +831,10 @@ function startPxAssist() {
   focusTracking.totalGazeCount = 0;
   focusTracking.sessionStartTime = Date.now();
   focusTracking.lastFocusAlertTime = 0;
+  focusTracking.gazeHistory = [];
+  focusTracking.consecutiveOutOfBoundsMs = 0;
+  focusTracking.lastGazeState = null;
+  focusTracking.consecutiveOutStartTime = null;
 
   if (analysisIntervalId) clearInterval(analysisIntervalId);
   analysisIntervalId = setInterval(analyzeReadingBehavior, ANALYSIS_INTERVAL_MS);
@@ -664,6 +889,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.type) {
     case 'GAZE_DATA':
       handleGazeData(message.data);
+
+      // CAMERA PREVIEW: Initialize camera preview after first gaze data (calibration must be done to get gaze data)
+      if (!cameraPreview) {
+        console.log('[CAMERA] First gaze data received, initializing camera preview...');
+        initializeCameraPreview().catch(err => {
+          console.error('[CAMERA] Failed to initialize preview:', err);
+        });
+      }
       break;
 
     case 'TOGGLE_VISUALIZATION':
@@ -708,6 +941,133 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
+// ANALYTICS: Initialize session tracking
+function initializeAnalyticsSession() {
+  analyticsSession.sessionId = crypto.randomUUID();
+  analyticsSession.startTime = Date.now();
+  analyticsSession.url = window.location.href;
+  analyticsSession.title = document.title;
+  analyticsSession.gazePoints = [];
+  analyticsSession.paragraphMetrics = {};
+  analyticsSession.llmUsage = [];
+  analyticsSession.focusEvents = [];
+
+  console.log(`[ANALYTICS] Session started: ${analyticsSession.sessionId}`);
+}
+
+// ANALYTICS: Save session data to chrome.storage.local
+async function saveAnalyticsSession() {
+  if (!analyticsSession.sessionId) return;
+
+  const endTime = Date.now();
+  const duration = endTime - analyticsSession.startTime;
+  const dateStr = new Date(analyticsSession.startTime).toISOString().split('T')[0]; // "2026-01-05"
+
+  // Calculate session statistics
+  const totalGazePoints = analyticsSession.gazePoints.length;
+  const inBoundsPoints = analyticsSession.gazePoints.filter(p => p.isInBounds).length;
+  const avgFocusScore = totalGazePoints > 0 ? (inBoundsPoints / totalGazePoints) * 100 : 0;
+
+  const sessionData = {
+    sessionId: analyticsSession.sessionId,
+    date: dateStr,
+    startTime: analyticsSession.startTime,
+    endTime: endTime,
+    duration: duration,
+    url: analyticsSession.url,
+    title: analyticsSession.title,
+    avgFocusScore: avgFocusScore,
+    totalGazePoints: totalGazePoints,
+    inBoundsPoints: inBoundsPoints,
+    outOfBoundsPoints: totalGazePoints - inBoundsPoints,
+    paragraphMetrics: analyticsSession.paragraphMetrics,
+    llmUsage: analyticsSession.llmUsage,
+    focusEvents: analyticsSession.focusEvents,
+    // Calculate additional metrics
+    paragraphsRead: Object.keys(analyticsSession.paragraphMetrics).length,
+    difficultParagraphs: Object.values(analyticsSession.paragraphMetrics).filter(p => p.difficultyRatio >= 1.6).length,
+    llmAssistanceUsed: analyticsSession.llmUsage.length > 0
+  };
+
+  try {
+    // Load existing analytics data
+    const result = await chrome.storage.local.get(['analyticsData']);
+    const analyticsData = result.analyticsData || {
+      profile: { userId: 'default', createdAt: new Date().toISOString() },
+      sessions: [],
+      dailyStats: {},
+      weeklyStats: {},
+      gamification: {
+        currentStreak: 0,
+        longestStreak: 0,
+        totalPoints: 0,
+        level: 1,
+        badges: [],
+        goals: {
+          daily: { target: 1800000, current: 0, achieved: false },
+          weekly: { target: 10800000, current: 0, achieved: false }
+        }
+      },
+      topics: {}
+    };
+
+    // Add session to sessions array
+    analyticsData.sessions.push(sessionData);
+
+    // Update daily stats
+    if (!analyticsData.dailyStats[dateStr]) {
+      analyticsData.dailyStats[dateStr] = {
+        date: dateStr,
+        totalDuration: 0,
+        sessions: 0,
+        avgFocusScore: 0,
+        paragraphsRead: 0,
+        difficultParagraphs: 0,
+        llmUsageCount: 0,
+        distractionAlerts: 0
+      };
+    }
+
+    const dayStats = analyticsData.dailyStats[dateStr];
+    dayStats.totalDuration += duration;
+    dayStats.sessions++;
+    dayStats.avgFocusScore = ((dayStats.avgFocusScore * (dayStats.sessions - 1)) + avgFocusScore) / dayStats.sessions;
+    dayStats.paragraphsRead += sessionData.paragraphsRead;
+    dayStats.difficultParagraphs += sessionData.difficultParagraphs;
+    dayStats.llmUsageCount += analyticsSession.llmUsage.length;
+    dayStats.distractionAlerts += analyticsSession.focusEvents.filter(e => e.type === 'distraction_alert').length;
+
+    // Update gamification points
+    const pointsEarned = Math.floor(duration / 60000); // 1 point per minute
+    analyticsData.gamification.totalPoints += pointsEarned;
+    analyticsData.gamification.goals.daily.current += duration;
+    analyticsData.gamification.goals.weekly.current += duration;
+
+    // Calculate level
+    const levels = [
+      { level: 1, minPoints: 0 },
+      { level: 2, minPoints: 100 },
+      { level: 3, minPoints: 300 },
+      { level: 4, minPoints: 600 },
+      { level: 5, minPoints: 1000 },
+      { level: 6, minPoints: 1500 },
+      { level: 7, minPoints: 2500 },
+      { level: 8, minPoints: 4000 },
+      { level: 9, minPoints: 6000 },
+      { level: 10, minPoints: 10000 }
+    ];
+    const currentLevel = levels.filter(l => analyticsData.gamification.totalPoints >= l.minPoints).pop();
+    analyticsData.gamification.level = currentLevel.level;
+
+    // Save updated analytics data
+    await chrome.storage.local.set({ analyticsData });
+
+    console.log(`[ANALYTICS] Session saved: ${duration}ms, ${sessionData.paragraphsRead} paragraphs, ${avgFocusScore.toFixed(1)}% focus`);
+  } catch (error) {
+    console.error('[ANALYTICS] Failed to save session:', error);
+  }
+}
+
 function initialize() {
   // PROFILE-ADAPTIVE: Detect site structure and configure behavior
   const siteProfile = detectSiteProfile();
@@ -717,6 +1077,9 @@ function initialize() {
   // Debug panel will be created when first gaze data arrives
   // Auto-start PX Assist (always-on reading assistance)
   startPxAssist();
+
+  // ANALYTICS: Initialize session tracking
+  initializeAnalyticsSession();
 }
 
 if (document.readyState === 'loading') {
@@ -728,8 +1091,14 @@ if (document.readyState === 'loading') {
 console.log('ReaRead content script initialized');
 
 // CLEANUP: Remove all visual artifacts when extension is disabled/unloaded
-window.addEventListener('beforeunload', cleanupAll);
-window.addEventListener('pagehide', cleanupAll);
+window.addEventListener('beforeunload', () => {
+  saveAnalyticsSession();
+  cleanupAll();
+});
+window.addEventListener('pagehide', () => {
+  saveAnalyticsSession();
+  cleanupAll();
+});
 
 // Listen for extension being disabled/uninstalled
 chrome.runtime.onMessage.addListener((message) => {
@@ -738,8 +1107,231 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 });
 
+// AUTO READ MODE: Check if paragraph should be read and trigger TTS
+function checkAndReadParagraph(paragraphKey, paragraphElement) {
+  // Wait for dwell threshold before reading
+  setTimeout(() => {
+    // Check if still on same paragraph after threshold
+    if (currentParagraphKey === paragraphKey && autoReadMode.enabled) {
+      const text = paragraphElement.textContent.trim();
+      if (text && text.length > 10) {
+        readParagraphAloud(text, paragraphKey);
+      }
+    }
+  }, autoReadMode.dwellThreshold);
+}
+
+// AUTO READ MODE: Read paragraph using Web Speech API or TTS
+async function readParagraphAloud(text, paragraphKey) {
+  // Skip if already reading
+  if (autoReadMode.isReading) {
+    console.log('[AUTO READ] Already reading, skipping...');
+    return;
+  }
+
+  autoReadMode.isReading = true;
+  autoReadMode.lastReadParagraph = paragraphKey;
+
+  console.log(`[AUTO READ] Reading paragraph: ${paragraphKey.substring(0, 20)}...`);
+
+  try {
+    // Detect original language
+    const originalLanguage = detectLanguageFromText(text);
+
+    // Determine target language
+    let targetLanguage = autoReadMode.language;
+    if (targetLanguage === 'auto') {
+      targetLanguage = originalLanguage;
+    }
+
+    // Translate if target language differs from original
+    let textToSpeak = text;
+    if (targetLanguage !== originalLanguage && autoReadMode.language !== 'auto') {
+      console.log(`[AUTO READ] Translating from ${originalLanguage} to ${targetLanguage}...`);
+      textToSpeak = await translateText(text, originalLanguage, targetLanguage);
+      if (!textToSpeak) {
+        console.error('[AUTO READ] Translation failed, using original text');
+        textToSpeak = text;
+      }
+    }
+
+    // Use Web Speech API (works with Bluetooth automatically)
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+
+    // Set language based on selection
+    const languageCodes = {
+      'tr': 'tr-TR',
+      'en': 'en-US',
+      'de': 'de-DE',
+      'fr': 'fr-FR',
+      'es': 'es-ES',
+      'it': 'it-IT',
+      'ja': 'ja-JP',
+      'zh': 'zh-CN'
+    };
+    utterance.lang = languageCodes[targetLanguage] || 'en-US';
+
+    // Set voice parameters
+    utterance.rate = 1.0; // Normal speed
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+
+    // Event handlers
+    utterance.onend = () => {
+      autoReadMode.isReading = false;
+      console.log('[AUTO READ] Finished reading');
+    };
+
+    utterance.onerror = (error) => {
+      console.error('[AUTO READ] Speech error:', error);
+      autoReadMode.isReading = false;
+    };
+
+    // Cancel any ongoing speech and start new
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+
+    // Store current utterance for potential cancellation
+    autoReadMode.currentAudio = utterance;
+
+  } catch (error) {
+    console.error('[AUTO READ] Failed to read paragraph:', error);
+    autoReadMode.isReading = false;
+  }
+}
+
+// Detect language from text (simple heuristic)
+function detectLanguageFromText(text) {
+  // Character-based detection for specific scripts
+  const turkishChars = /[ğüşıöçĞÜŞİÖÇ]/;
+  const japaneseChars = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/; // Hiragana, Katakana, Kanji
+  const chineseChars = /[\u4E00-\u9FFF]/; // Chinese Hanzi
+
+  // Word-based detection for Latin script languages
+  const turkishWords = /\b(ve|bir|bu|için|olan|ile|daha|çok|var|gibi|her|veya|ama|ancak|şey)\b/i;
+  const germanWords = /\b(der|die|das|und|ist|nicht|ein|eine|mit|den|zu|auf|für|von|dem|des)\b/i;
+  const frenchWords = /\b(le|la|les|de|un|une|dans|pour|est|sont|avec|cette|qui|mais|ou)\b/i;
+  const spanishWords = /\b(el|la|los|las|de|un|una|en|para|es|son|con|esta|que|pero|o)\b/i;
+  const italianWords = /\b(il|la|le|di|un|una|nel|per|è|sono|con|questa|che|ma|o)\b/i;
+
+  // Check for Asian languages first (most distinctive)
+  if (japaneseChars.test(text)) {
+    return 'ja';
+  }
+
+  if (chineseChars.test(text)) {
+    return 'zh';
+  }
+
+  // Check for Turkish (has unique characters)
+  if (turkishChars.test(text) || turkishWords.test(text)) {
+    return 'tr';
+  }
+
+  // Check for other European languages
+  if (frenchWords.test(text)) {
+    return 'fr';
+  }
+
+  if (spanishWords.test(text)) {
+    return 'es';
+  }
+
+  if (italianWords.test(text)) {
+    return 'it';
+  }
+
+  if (germanWords.test(text)) {
+    return 'de';
+  }
+
+  return 'en'; // Default to English
+}
+
+// AUTO READ MODE: Translate text using Gemini API
+async function translateText(text, fromLang, toLang) {
+  try {
+    const languageNames = {
+      'tr': 'Turkish',
+      'en': 'English',
+      'de': 'German',
+      'fr': 'French',
+      'es': 'Spanish',
+      'it': 'Italian',
+      'ja': 'Japanese',
+      'zh': 'Chinese'
+    };
+
+    const fromLanguage = languageNames[fromLang] || fromLang;
+    const toLanguage = languageNames[toLang] || toLang;
+
+    // Send message to background script to translate
+    const response = await chrome.runtime.sendMessage({
+      type: 'TRANSLATE_TEXT',
+      data: {
+        text: text,
+        fromLanguage: fromLanguage,
+        toLanguage: toLanguage
+      }
+    });
+
+    if (response && response.success && response.translation) {
+      console.log(`[AUTO READ] Translation successful: ${response.translation.substring(0, 50)}...`);
+      return response.translation;
+    } else {
+      console.error('[AUTO READ] Translation failed:', response?.error);
+      return null;
+    }
+  } catch (error) {
+    console.error('[AUTO READ] Translation error:', error);
+    return null;
+  }
+}
+
+// GESTURE: Handle double blink - click visible Get Help button
+function handleDoubleBlink() {
+  console.log('[GESTURE] Double blink detected - looking for Get Help button');
+
+  // Find visible Get Help button for current paragraph
+  if (currentParagraphKey) {
+    const helpBtn = document.querySelector(`.rearead-help-btn[data-key="${currentParagraphKey}"]`);
+
+    if (helpBtn) {
+      console.log('[GESTURE] Clicking Get Help button');
+      helpBtn.click();
+    } else {
+      console.log('[GESTURE] No Get Help button found for current paragraph');
+    }
+  }
+}
+
 function cleanupAll() {
   console.log('[CLEANUP] Removing all ReaRead artifacts...');
+
+  // Stop auto-read mode
+  if (autoReadMode.enabled && autoReadMode.currentAudio) {
+    window.speechSynthesis.cancel();
+    autoReadMode.currentAudio = null;
+    autoReadMode.isReading = false;
+  }
+
+  // Stop camera stream
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+
+  // Remove camera preview
+  if (cameraPreview && cameraPreview.parentNode) {
+    cameraPreview.parentNode.removeChild(cameraPreview);
+    cameraPreview = null;
+  }
+
+  // Remove camera label
+  const cameraLabel = document.getElementById('rearead-camera-label');
+  if (cameraLabel && cameraLabel.parentNode) {
+    cameraLabel.parentNode.removeChild(cameraLabel);
+  }
 
   // Remove gaze cursor
   if (gazeCursor && gazeCursor.parentNode) {
@@ -822,27 +1414,60 @@ function configureReadingProfile(profile) {
   }
 }
 
-// FOCUS MODE: Check if user is distracted
+// FOCUS MODE: Check if user is distracted (AKILLI KOMBİNASYON)
 function checkFocusLevel() {
   // Only check every 60 frames (~1 second)
   if (focusTracking.totalGazeCount % 60 !== 0) return;
 
   const now = Date.now();
-  const distractionRatio = focusTracking.outOfBoundsCount / focusTracking.totalGazeCount;
+  let shouldAlert = false;
+  let alertReason = '';
+  let distractionRatio = 0;
 
-  // If out-of-bounds count exceeds threshold
-  if (focusTracking.outOfBoundsCount >= FOCUS_CONFIG.OUT_OF_BOUNDS_THRESHOLD) {
-    // Check cooldown - don't spam alerts
-    if (now - focusTracking.lastFocusAlertTime >= FOCUS_CONFIG.ALERT_COOLDOWN_MS) {
-      showFocusAlert(distractionRatio);
-      focusTracking.lastFocusAlertTime = now;
+  // KRITER 1: Son 5 dakikada %40'tan fazla dışarıda mı?
+  if (focusTracking.gazeHistory.length > 0) {
+    const outOfBoundsCount = focusTracking.gazeHistory.filter(entry => entry.isOutOfBounds).length;
+    const totalCount = focusTracking.gazeHistory.length;
+    distractionRatio = outOfBoundsCount / totalCount;
+
+    if (distractionRatio >= FOCUS_CONFIG.DISTRACTION_THRESHOLD_PERCENT / 100) {
+      shouldAlert = true;
+      alertReason = `Son 5 dakikada %${(distractionRatio * 100).toFixed(0)} dışarıda`;
+      console.log(`[FOCUS] Kriter 1 tetiklendi: ${alertReason}`);
     }
-    // Reset counters after alert
-    focusTracking.outOfBoundsCount = 0;
-    focusTracking.totalGazeCount = 0;
   }
 
-  // Also check session duration for Pomodoro
+  // KRITER 2: Üst üste 30 saniye dışarıda mı?
+  if (!shouldAlert && focusTracking.consecutiveOutOfBoundsMs >= FOCUS_CONFIG.CONSECUTIVE_OUT_THRESHOLD_MS) {
+    shouldAlert = true;
+    alertReason = `Üst üste ${(focusTracking.consecutiveOutOfBoundsMs / 1000).toFixed(0)} saniye dışarıda`;
+    console.log(`[FOCUS] Kriter 2 tetiklendi: ${alertReason}`);
+
+    // Geçmişe bakarak oran hesapla (alert için)
+    if (focusTracking.gazeHistory.length > 0) {
+      const outOfBoundsCount = focusTracking.gazeHistory.filter(entry => entry.isOutOfBounds).length;
+      const totalCount = focusTracking.gazeHistory.length;
+      distractionRatio = outOfBoundsCount / totalCount;
+    }
+  }
+
+  // Alert göster (cooldown kontrolü ile)
+  if (shouldAlert) {
+    if (now - focusTracking.lastFocusAlertTime >= FOCUS_CONFIG.ALERT_COOLDOWN_MS) {
+      showFocusAlert(distractionRatio, alertReason);
+      focusTracking.lastFocusAlertTime = now;
+
+      // Reset counters after alert
+      focusTracking.outOfBoundsCount = 0;
+      focusTracking.totalGazeCount = 0;
+      focusTracking.gazeHistory = [];
+      focusTracking.consecutiveOutOfBoundsMs = 0;
+      focusTracking.consecutiveOutStartTime = null;
+      focusTracking.lastGazeState = null;
+    }
+  }
+
+  // Pomodoro kontrolü (değişmedi)
   const sessionDuration = now - focusTracking.sessionStartTime;
   if (sessionDuration >= FOCUS_CONFIG.POMODORO_WORK_MS) {
     showPomodoroBreakAlert();
@@ -850,12 +1475,62 @@ function checkFocusLevel() {
     focusTracking.sessionStartTime = now;
     focusTracking.outOfBoundsCount = 0;
     focusTracking.totalGazeCount = 0;
+    focusTracking.gazeHistory = [];
+    focusTracking.consecutiveOutOfBoundsMs = 0;
+    focusTracking.consecutiveOutStartTime = null;
+    focusTracking.lastGazeState = null;
   }
 }
 
 // FOCUS MODE: Show distraction alert
-function showFocusAlert(distractionRatio) {
+// ANALYTICS & AUTO READ: Listen for messages from llm-helper.js
+window.addEventListener('message', (event) => {
+  // Verify origin for security
+  if (event.origin !== window.location.origin) return;
+
+  if (event.data.type === 'REAREAD_LLM_USAGE') {
+    const { mode, paragraphKey, timestamp } = event.data.data;
+
+    // Track LLM usage
+    if (analyticsSession.sessionId) {
+      analyticsSession.llmUsage.push({ timestamp, mode, paragraphKey });
+
+      // Mark paragraph as using LLM
+      if (analyticsSession.paragraphMetrics[paragraphKey]) {
+        analyticsSession.paragraphMetrics[paragraphKey].llmUsed = true;
+      }
+    }
+
+    console.log(`[ANALYTICS] LLM used: ${mode} on ${paragraphKey}`);
+  }
+
+  if (event.data.type === 'REAREAD_AUTO_READ_MODE') {
+    const { enabled, language } = event.data.data;
+    autoReadMode.enabled = enabled;
+    autoReadMode.language = language;
+
+    console.log(`[AUTO READ] Mode ${enabled ? 'enabled' : 'disabled'}, language: ${language}`);
+
+    // Stop current audio if disabling
+    if (!enabled && autoReadMode.currentAudio) {
+      autoReadMode.currentAudio.pause();
+      autoReadMode.currentAudio = null;
+      autoReadMode.isReading = false;
+    }
+  }
+});
+
+function showFocusAlert(distractionRatio, alertReason = '') {
   const percentage = (distractionRatio * 100).toFixed(0);
+
+  // ANALYTICS: Track focus alert event
+  if (analyticsSession.sessionId) {
+    analyticsSession.focusEvents.push({
+      timestamp: Date.now(),
+      type: 'distraction_alert',
+      data: { distractionRatio, alertReason }
+    });
+  }
 
   const alert = document.createElement('div');
   alert.id = 'rearead-focus-alert';
@@ -888,8 +1563,11 @@ function showFocusAlert(distractionRatio) {
     ">
       Dikkat Dağınıklığı Tespit Edildi
     </div>
-    <div style="font-size: 16px; color: #e0e0e0; margin-bottom: 24px;">
-      Son 2 dakikada dikkatinin %${percentage}'i sayfa dışındaydı
+    <div style="font-size: 16px; color: #e0e0e0; margin-bottom: 8px;">
+      ${alertReason || `Dikkatinin %${percentage}'i sayfa dışındaydı`}
+    </div>
+    <div style="font-size: 13px; color: #888; margin-bottom: 24px;">
+      (Toplam dikkat dışı oran: %${percentage})
     </div>
     <div style="font-size: 14px; color: #a0a0a0; margin-bottom: 24px;">
       💡 5 dakika mola vermek ister misin?

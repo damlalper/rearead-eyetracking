@@ -69,3 +69,35 @@ window.addEventListener('scroll', () => {
         ticking = true;
     }
 });
+
+// Active section highlighting in navbar
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+
+function updateActiveNavLink() {
+    const scrollY = window.scrollY;
+    const offset = 150; // Offset for navbar height
+
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop - offset;
+        const sectionHeight = section.offsetHeight;
+        const sectionId = section.getAttribute('id');
+
+        if (scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+            // Remove active class from all links
+            navLinks.forEach(link => link.classList.remove('active'));
+
+            // Add active class to current section's link
+            const activeLink = document.querySelector(`.nav-links a[href="#${sectionId}"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+            }
+        }
+    });
+}
+
+// Update on scroll
+window.addEventListener('scroll', updateActiveNavLink);
+
+// Update on load
+window.addEventListener('load', updateActiveNavLink);

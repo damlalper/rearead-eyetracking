@@ -8,6 +8,7 @@ from eyetrax import GazeEstimator
 from eyetrax.calibration import run_9_point_calibration
 from eyetrax.utils.screen import get_screen_size
 from eyetrax.filters import KalmanSmoother, make_kalman, KDESmoother
+from gesture_detector import GestureDetector
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class GazeStreamer:
         self.screen_width, self.screen_height = get_screen_size()
         self.model_path = "users/default_model.pkl"
         self.smoother = None
+        self.gesture_detector = GestureDetector()  # Initialize gesture detector
 
         # Create users directory if it doesn't exist
         os.makedirs("users", exist_ok=True)
@@ -208,6 +210,9 @@ class GazeStreamer:
             x = max(0, min(int(x), self.screen_width - 1))
             y = max(0, min(int(y), self.screen_height - 1))
 
+            # Detect gestures from the same frame
+            gestures = self.gesture_detector.detect_gestures(frame)
+
             # Prepare gaze data packet
             gaze_data = {
                 "type": "gaze",
@@ -216,7 +221,8 @@ class GazeStreamer:
                 "confidence": 0.9,  # High confidence - face detected, no blink
                 "timestamp": int(time.time() * 1000),
                 "screen_width": self.screen_width,
-                "screen_height": self.screen_height
+                "screen_height": self.screen_height,
+                "gestures": gestures  # Add gesture data
             }
 
             # DEBUG: Print gaze data
@@ -292,3 +298,11 @@ class GazeStreamer:
                 logger.debug("Camera released")
             except Exception as e:
                 logger.error(f"Error releasing camera: {e}")
+
+        # Cleanup gesture detector
+        if self.gesture_detector:
+            try:
+                self.gesture_detector.cleanup()
+                logger.debug("Gesture detector cleaned up")
+            except Exception as e:
+                logger.error(f"Error cleaning up gesture detector: {e}")

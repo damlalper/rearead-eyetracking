@@ -6,21 +6,104 @@
 // Purpose: Provide AI-powered reading assistance without affecting core features
 
 /**
- * Core LLM call function - isolated and reusable (Groq API)
+ * Core LLM call function - isolated and reusable (Gemini primary, Groq fallback)
  * @param {Object} options - Configuration object
- * @param {string} options.mode - Help mode: "summary", "simplify", "explain", etc.
+ * @param {string} options.mode - Help mode: "summary", "simplify", "explain", "ask_question", etc.
  * @param {string} options.text - Raw paragraph text to analyze
+ * @param {string} options.question - User's question (for ask_question mode)
  * @returns {Promise<string>} - LLM response text
  */
-async function callLLM({ mode, text }) {
-  // Load API key from storage
+async function callLLM({ mode, text, question = '' }) {
+  // Try Gemini first, fallback to Groq if fails
+  try {
+    return await callGemini({ mode, text, question });
+  } catch (geminiError) {
+    console.warn('[LLM] Gemini failed, trying Groq fallback:', geminiError);
+    return await callGroq({ mode, text, question });
+  }
+}
+
+/**
+ * Call Gemini API (Primary LLM)
+ */
+async function callGemini({ mode, text, question }) {
+  // Load Gemini API key from storage
+  let apiKey = await loadGeminiApiKey();
+
+  // If no API key, request it from user
+  if (!apiKey) {
+    apiKey = await requestGeminiApiKeyFromUser();
+    if (!apiKey) {
+      throw new Error('Gemini API key required. Get a free key from aistudio.google.com');
+    }
+    await saveGeminiApiKey(apiKey);
+  }
+
+  const GEMINI_CONFIG = {
+    apiEndpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+    apiKey: apiKey,
+    model: 'gemini-2.0-flash-exp',
+    maxTokens: 500,
+    temperature: 0.7
+  };
+
+  // Auto-detect language
+  const lang = detectLanguage(text);
+
+  // Build prompt
+  const prompt = buildPrompt({ mode, text, question, lang });
+
+  try {
+    const response = await fetch(`${GEMINI_CONFIG.apiEndpoint}?key=${GEMINI_CONFIG.apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: prompt
+          }]
+        }],
+        generationConfig: {
+          temperature: GEMINI_CONFIG.temperature,
+          maxOutputTokens: GEMINI_CONFIG.maxTokens
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Extract text from Gemini API response
+    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+      return data.candidates[0].content.parts[0].text.trim();
+    }
+
+    throw new Error('Invalid Gemini API response format');
+
+  } catch (error) {
+    console.error('[GEMINI] Error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Call Groq API (Fallback LLM)
+ */
+async function callGroq({ mode, text, question }) {
+  // Load Groq API key from storage
   let apiKey = await loadApiKey();
 
   // If no API key, request it from user with custom UI
   if (!apiKey) {
     apiKey = await requestApiKeyFromUser();
     if (!apiKey) {
-      throw new Error('API key required. Get a free key from console.groq.com');
+      throw new Error('Groq API key required. Get a free key from console.groq.com');
     }
     // Save for future use
     await saveApiKey(apiKey);
@@ -35,19 +118,67 @@ async function callLLM({ mode, text }) {
     temperature: 0.7
   };
 
-  // Auto-detect language from text (simple heuristic)
-  const detectLanguage = (text) => {
-    const turkishChars = /[ğüşıöçĞÜŞİÖÇ]/;
-    const turkishWords = /\b(ve|bir|bu|için|olan|ile|daha|çok|var|gibi|her|veya|ama|ancak|şey)\b/i;
-
-    if (turkishChars.test(text) || turkishWords.test(text)) {
-      return 'tr';
-    }
-    return 'en';
-  };
-
+  // Auto-detect language
   const lang = detectLanguage(text);
 
+  // Build prompt
+  const prompt = buildPrompt({ mode, text, question, lang });
+
+  try {
+    const response = await fetch(LLM_CONFIG.apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
+      },
+      body: JSON.stringify({
+        model: LLM_CONFIG.model,
+        messages: [{
+          role: 'user',
+          content: prompt
+        }],
+        max_tokens: LLM_CONFIG.maxTokens,
+        temperature: LLM_CONFIG.temperature
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Groq API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Extract text from Groq/OpenAI API response format
+    if (data.choices?.[0]?.message?.content) {
+      return data.choices[0].message.content.trim();
+    }
+
+    throw new Error('Invalid Groq API response format');
+
+  } catch (error) {
+    console.error('[GROQ] Error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Auto-detect language from text
+ */
+function detectLanguage(text) {
+  const turkishChars = /[ğüşıöçĞÜŞİÖÇ]/;
+  const turkishWords = /\b(ve|bir|bu|için|olan|ile|daha|çok|var|gibi|her|veya|ama|ancak|şey)\b/i;
+
+  if (turkishChars.test(text) || turkishWords.test(text)) {
+    return 'tr';
+  }
+  return 'en';
+}
+
+/**
+ * Build prompt based on mode
+ */
+function buildPrompt({ mode, text, question, lang }) {
   // Mode-specific prompts with improved prompt engineering
   const PROMPTS = {
     summary: lang === 'tr'
@@ -134,33 +265,43 @@ ${text}
 
 DIFFICULT WORDS:`,
 
-    quiz: lang === 'tr'
-      ? `Sen bir öğretmensin. Bu metni okuduktan sonra anlama düzeyini test edecek sorular oluştur.
+    ask_question: lang === 'tr'
+      ? `Sen akıllı bir okuma asistanısın. Kullanıcının paragraf hakkındaki sorusuna SADECE paragraftaki bilgileri kullanarak cevap ver.
 
-KURALLAR:
-- 3 çoktan seçmeli soru oluştur
-- Her soru için 4 şık sun (A, B, C, D)
-- Doğru cevabı belirt
-- Sorular metni anlamayı ölçmeli, ezberlemeyi değil
-- Format: "SORU 1: ... \nA) ... \nB) ... \nC) ... \nD) ... \nDOĞRU: X"
+KRİTİK KURALLAR:
+- SADECE aşağıdaki paragraftaki bilgilere dayanarak cevap ver
+- Paragrafta cevap yoksa "Bu paragrafta bu konuyla ilgili bilgi bulunmuyor" de
+- Kısa ve öz cevap ver (2-4 cümle)
+- Basit ve anlaşılır dil kullan
+- Gerekirse paragraftan alıntı yap
 
-METİN:
+PARAGRAF İÇERİĞİ:
+"""
 ${text}
+"""
 
-ANLAMA SORULARI:`
-      : `You are a teacher. Create comprehension questions to test understanding of this text.
+KULLANICI SORUSU:
+${question}
 
-RULES:
-- Create 3 multiple choice questions
-- Provide 4 options (A, B, C, D) for each
-- Indicate the correct answer
-- Questions should test comprehension, not memorization
-- Format: "QUESTION 1: ... \nA) ... \nB) ... \nC) ... \nD) ... \nCORRECT: X"
+CEVAP (sadece paragraf bilgisine dayalı):`
+      : `You are an intelligent reading assistant. Answer the user's question ONLY using information from the provided paragraph.
 
-TEXT:
+CRITICAL RULES:
+- Answer ONLY based on the paragraph below
+- If the answer is not in the paragraph, say "This paragraph doesn't contain information about that"
+- Give a concise answer (2-4 sentences)
+- Use simple and clear language
+- Quote from the paragraph when relevant
+
+PARAGRAPH CONTENT:
+"""
 ${text}
+"""
 
-COMPREHENSION QUESTIONS:`,
+USER QUESTION:
+${question}
+
+ANSWER (based only on paragraph):`,
 
     keypoints: lang === 'tr'
       ? `Sen bir not alma asistanısın. Metindeki ana fikirleri madde madde çıkar.
@@ -199,44 +340,7 @@ ${text}`
 ${text}`
   };
 
-  const prompt = PROMPTS[mode] || PROMPTS.default;
-
-  try {
-    const response = await fetch(LLM_CONFIG.apiEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LLM_CONFIG.apiKey}`
-      },
-      body: JSON.stringify({
-        model: LLM_CONFIG.model,
-        messages: [{
-          role: 'user',
-          content: prompt
-        }],
-        max_tokens: LLM_CONFIG.maxTokens,
-        temperature: LLM_CONFIG.temperature
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Groq API error: ${response.status} - ${errorData.error?.message || response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    // Extract text from Groq/OpenAI API response format
-    if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-      return data.choices[0].message.content.trim();
-    }
-
-    throw new Error('Invalid Groq API response format');
-
-  } catch (error) {
-    console.error('[LLM] Error:', error);
-    throw error;
-  }
+  return PROMPTS[mode] || PROMPTS.default;
 }
 
 /**
@@ -323,17 +427,29 @@ function showHelpMenu({ key, text }) {
   }
 
   // Menu title with gradient
-  const title = document.createElement('h3');
-  title.textContent = '🎯 Reading Assistance';
-  title.style.cssText = `
-    margin: 0 0 20px 0;
-    font-size: 20px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #ffffff, #FF9B45);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -0.02em;
+  const title = document.createElement('div');
+  title.innerHTML = `
+    <h3 style="
+      margin: 0 0 8px 0;
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff, #FF9B45);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.02em;
+    ">🎯 Reading Assistance</h3>
+    <div style="
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      background: rgba(76, 175, 80, 0.1);
+      border-radius: 6px;
+      border: 1px solid rgba(76, 175, 80, 0.2);
+    ">
+      💡 <strong>Gesture Control:</strong> 👁️👁️ Double blink to select • ➡️ Right to next • ⬅️ Left to previous • ⬆️ Up to close
+    </div>
   `;
 
   // Menu options
@@ -351,10 +467,10 @@ function showHelpMenu({ key, text }) {
       description: 'Explain difficult words with examples'
     },
     {
-      id: 'quiz',
-      icon: '❓',
-      label: 'Quiz',
-      description: 'Test comprehension with questions'
+      id: 'ask_question',
+      icon: '💬',
+      label: 'Ask Question',
+      description: 'Ask anything about this paragraph'
     },
     {
       id: 'keypoints',
@@ -369,6 +485,12 @@ function showHelpMenu({ key, text }) {
       description: 'Listen to this paragraph with text-to-speech'
     },
     {
+      id: 'auto_read',
+      icon: '🎧',
+      label: 'Auto Read Mode',
+      description: 'Connect Bluetooth headphones and learn while listening - 9 languages supported'
+    },
+    {
       id: 'zoom',
       icon: '🔍',
       label: 'Zoom',
@@ -380,13 +502,14 @@ function showHelpMenu({ key, text }) {
 
   options.forEach(option => {
     const optionBtn = document.createElement('button');
+    optionBtn.setAttribute('data-option', option.id); // For gesture navigation
     optionBtn.style.cssText = `
       width: 100%;
       padding: 16px;
       margin-bottom: 10px;
       border: 1px solid #2a2a2a;
       border-radius: 10px;
-      background: #0d0d0d;
+      background: #222;
       cursor: pointer;
       text-align: left;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -471,6 +594,20 @@ function showHelpMenu({ key, text }) {
   menuOverlay.onclick = (e) => {
     if (e.target === menuOverlay) menuOverlay.remove();
   };
+
+  // GESTURE NAVIGATION: Enable gesture control for this menu
+  const optionButtons = menuContainer.querySelectorAll('button[data-option]');
+  gestureMenuNavigation.enabled = true;
+  gestureMenuNavigation.currentIndex = 0;
+  gestureMenuNavigation.options = Array.from(optionButtons);
+  gestureMenuNavigation.menuElement = menuOverlay;
+
+  // Highlight first option
+  if (gestureMenuNavigation.options.length > 0) {
+    updateMenuSelection();
+  }
+
+  console.log('[GESTURE NAV] Menu opened with', gestureMenuNavigation.options.length, 'options');
 }
 
 /**
@@ -478,6 +615,12 @@ function showHelpMenu({ key, text }) {
  */
 async function handleHelpOption({ option, key, text }) {
   try {
+    // ANALYTICS: Notify content script of LLM usage
+    window.postMessage({
+      type: 'REAREAD_LLM_USAGE',
+      data: { mode: option, paragraphKey: key, timestamp: Date.now() }
+    }, '*');
+
     if (option === 'summary') {
       // Show loading
       showLoadingIndicator('Generating summary...');
@@ -496,14 +639,21 @@ async function handleHelpOption({ option, key, text }) {
       hideLoadingIndicator();
       showResultModal({ title: 'Vocabulary Builder', content: response, key });
 
-    } else if (option === 'quiz') {
-      // Show loading
-      showLoadingIndicator('Creating quiz questions...');
+    } else if (option === 'ask_question') {
+      // Show question input modal
+      const question = await showQuestionInputModal();
 
-      const response = await callLLM({ mode: 'quiz', text });
+      if (!question || question.trim() === '') {
+        return; // User cancelled or entered empty question
+      }
+
+      // Show loading
+      showLoadingIndicator('Finding answer...');
+
+      const response = await callLLM({ mode: 'ask_question', text, question: question.trim() });
 
       hideLoadingIndicator();
-      showResultModal({ title: 'Comprehension Quiz', content: response, key });
+      showResultModal({ title: '💬 Answer', content: response, key });
 
     } else if (option === 'keypoints') {
       // Show loading
@@ -523,6 +673,10 @@ async function handleHelpOption({ option, key, text }) {
 
       hideLoadingIndicator();
 
+    } else if (option === 'auto_read') {
+      // Enable auto-read mode with language selection
+      await enableAutoReadMode();
+
     } else if (option === 'zoom') {
       // Show zoomed paragraph (no LLM needed)
       zoomParagraph({ key, text });
@@ -533,6 +687,169 @@ async function handleHelpOption({ option, key, text }) {
     console.error('[LLM] Failed to get help:', error);
     alert(`Failed to get assistance: ${error.message}\n\nPlease check your API settings.`);
   }
+}
+
+/**
+ * Show question input modal for Ask Question feature
+ * Returns Promise<string> with the user's question
+ */
+function showQuestionInputModal() {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease-out;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    `;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: #181818;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    `;
+
+    modal.innerHTML = `
+      <div style="font-size: 20px; font-weight: 700; color: #ffffff; margin-bottom: 12px; letter-spacing: -0.02em;">
+        💬 Ask a Question
+      </div>
+      <div style="font-size: 14px; color: #a0a0a0; margin-bottom: 20px; line-height: 1.5;">
+        Ask anything about this paragraph. The answer will be based only on the paragraph content.
+      </div>
+      <textarea
+        id="rearead-question-input"
+        placeholder="What is the main idea of this paragraph?"
+        style="
+          width: 100%;
+          padding: 14px;
+          border: 1px solid #2a2a2a;
+          border-radius: 10px;
+          background: #0d0d0d;
+          color: #ffffff;
+          font-size: 14px;
+          font-family: inherit;
+          resize: vertical;
+          min-height: 100px;
+          margin-bottom: 20px;
+          transition: border-color 0.3s ease;
+        "
+      ></textarea>
+      <div style="display: flex; gap: 10px;">
+        <button id="rearead-question-submit" style="
+          flex: 1;
+          padding: 14px;
+          border: none;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #FF9B45 0%, #FF7B29 100%);
+          color: #ffffff;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          font-family: inherit;
+        ">
+          Ask Question
+        </button>
+        <button id="rearead-question-cancel" style="
+          padding: 14px 24px;
+          border: 1px solid #2a2a2a;
+          border-radius: 10px;
+          background: transparent;
+          color: #a0a0a0;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          font-family: inherit;
+        ">
+          Cancel
+        </button>
+      </div>
+    `;
+
+    const input = modal.querySelector('#rearead-question-input');
+    const submitBtn = modal.querySelector('#rearead-question-submit');
+    const cancelBtn = modal.querySelector('#rearead-question-cancel');
+
+    // Focus input
+    setTimeout(() => input.focus(), 100);
+
+    // Handle submit
+    submitBtn.onclick = () => {
+      const question = input.value.trim();
+      overlay.remove();
+      resolve(question);
+    };
+
+    // Handle cancel
+    cancelBtn.onclick = () => {
+      overlay.remove();
+      resolve(null);
+    };
+
+    // Handle Enter key (with Shift+Enter for new line)
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitBtn.click();
+      }
+    };
+
+    // Hover effects
+    submitBtn.onmouseover = () => {
+      submitBtn.style.transform = 'translateY(-2px)';
+      submitBtn.style.boxShadow = '0 8px 20px rgba(255, 155, 69, 0.4)';
+    };
+    submitBtn.onmouseout = () => {
+      submitBtn.style.transform = 'translateY(0)';
+      submitBtn.style.boxShadow = 'none';
+    };
+
+    cancelBtn.onmouseover = () => {
+      cancelBtn.style.borderColor = '#ff5252';
+      cancelBtn.style.color = '#ff5252';
+      cancelBtn.style.background = 'rgba(255, 82, 82, 0.08)';
+    };
+    cancelBtn.onmouseout = () => {
+      cancelBtn.style.borderColor = '#2a2a2a';
+      cancelBtn.style.color = '#a0a0a0';
+      cancelBtn.style.background = 'transparent';
+    };
+
+    // Input focus effect
+    input.onfocus = () => {
+      input.style.borderColor = '#FF9B45';
+    };
+    input.onblur = () => {
+      input.style.borderColor = '#2a2a2a';
+    };
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Close on overlay click
+    overlay.onclick = (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+        resolve(null);
+      }
+    };
+  });
 }
 
 /**
@@ -1067,6 +1384,38 @@ export async function saveApiKey(apiKey) {
 }
 
 /**
+ * Load Gemini API key from chrome storage
+ * @returns {Promise<string>} API key
+ */
+export async function loadGeminiApiKey() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get(['geminiApiKey'], (result) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(result.geminiApiKey || '');
+      }
+    });
+  });
+}
+
+/**
+ * Save Gemini API key to chrome storage
+ * @param {string} apiKey - API key to save
+ */
+export async function saveGeminiApiKey(apiKey) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.set({ geminiApiKey: apiKey }, () => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+/**
  * Load TTS API key from chrome storage
  * @returns {Promise<string>} API key
  */
@@ -1099,7 +1448,7 @@ export async function saveTTSApiKey(apiKey) {
 }
 
 /**
- * Request API key from user with custom UI dialog
+ * Request API key from user with custom UI dialog (Groq)
  * @returns {Promise<string|null>} API key or null if cancelled
  */
 function requestApiKeyFromUser() {
@@ -1284,6 +1633,478 @@ function requestApiKeyFromUser() {
       }
     });
   });
+}
+
+/**
+ * Request Gemini API key from user with custom UI dialog
+ * @returns {Promise<string|null>} API key or null if cancelled
+ */
+function requestGeminiApiKeyFromUser() {
+  return new Promise((resolve) => {
+    // Create modal dialog with modern dark theme
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 9999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease-out;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    `;
+
+    modal.innerHTML = `
+      <div style="
+        background: #181818;
+        border: 1px solid #2a2a2a;
+        padding: 32px;
+        border-radius: 16px;
+        max-width: 520px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      ">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+          <span style="font-size: 32px;">🔑</span>
+          <h2 style="
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #4285f4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+          ">Gemini API Key Required</h2>
+        </div>
+
+        <p style="margin: 0 0 20px 0; color: #a0a0a0; line-height: 1.6; font-size: 14px;">
+          Get a free API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #4285f4; text-decoration: none; font-weight: 600;">aistudio.google.com</a>
+        </p>
+
+        <input
+          type="text"
+          id="gemini-api-key-input"
+          placeholder="AIza..."
+          style="
+            width: 100%;
+            padding: 14px;
+            background: #0d0d0d;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #ffffff;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+          "
+        />
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="gemini-cancel-btn" style="
+            padding: 12px 24px;
+            background: transparent;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            color: #a0a0a0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+          ">Cancel</button>
+          <button id="gemini-save-btn" style="
+            padding: 12px 24px;
+            background: #4285f4;
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(66, 133, 244, 0.25);
+            font-family: inherit;
+          ">Save Key</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const input = document.getElementById('gemini-api-key-input');
+    const saveBtn = document.getElementById('gemini-save-btn');
+    const cancelBtn = document.getElementById('gemini-cancel-btn');
+
+    // Input focus effect
+    input.onfocus = () => {
+      input.style.borderColor = '#4285f4';
+      input.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
+    };
+    input.onblur = () => {
+      input.style.borderColor = '#2a2a2a';
+      input.style.boxShadow = 'none';
+    };
+
+    // Button hover effects
+    cancelBtn.onmouseover = () => {
+      cancelBtn.style.borderColor = '#ff5252';
+      cancelBtn.style.color = '#ff5252';
+      cancelBtn.style.background = 'rgba(255, 82, 82, 0.08)';
+    };
+    cancelBtn.onmouseout = () => {
+      cancelBtn.style.borderColor = '#2a2a2a';
+      cancelBtn.style.color = '#a0a0a0';
+      cancelBtn.style.background = 'transparent';
+    };
+
+    saveBtn.onmouseover = () => {
+      saveBtn.style.background = '#5a95f5';
+      saveBtn.style.transform = 'translateY(-2px)';
+      saveBtn.style.boxShadow = '0 6px 20px rgba(66, 133, 244, 0.35)';
+    };
+    saveBtn.onmouseout = () => {
+      saveBtn.style.background = '#4285f4';
+      saveBtn.style.transform = 'translateY(0)';
+      saveBtn.style.boxShadow = '0 4px 12px rgba(66, 133, 244, 0.25)';
+    };
+
+    // Focus input
+    setTimeout(() => input.focus(), 100);
+
+    // Handle save
+    saveBtn.addEventListener('click', () => {
+      const apiKey = input.value.trim();
+      modal.style.animation = 'fadeOut 0.2s ease-out';
+      setTimeout(() => {
+        modal.remove();
+        resolve(apiKey || null);
+      }, 150);
+    });
+
+    // Handle cancel
+    cancelBtn.addEventListener('click', () => {
+      modal.style.animation = 'fadeOut 0.2s ease-out';
+      setTimeout(() => {
+        modal.remove();
+        resolve(null);
+      }, 150);
+    });
+
+    // Handle Enter key
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const apiKey = input.value.trim();
+        modal.style.animation = 'fadeOut 0.2s ease-out';
+        setTimeout(() => {
+          modal.remove();
+          resolve(apiKey || null);
+        }, 150);
+      }
+    });
+
+    // Handle Escape key
+    modal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        modal.style.animation = 'fadeOut 0.2s ease-out';
+        setTimeout(() => {
+          modal.remove();
+          resolve(null);
+        }, 150);
+      }
+    });
+  });
+}
+
+/**
+ * Enable Auto Read Mode with language selection and Bluetooth audio
+ */
+async function enableAutoReadMode() {
+  // Show language selection modal
+  const selectedLanguage = await showLanguageSelectionModal();
+
+  if (!selectedLanguage) {
+    return; // User cancelled
+  }
+
+  // Notify content script to enable auto-read mode
+  window.postMessage({
+    type: 'REAREAD_AUTO_READ_MODE',
+    data: { enabled: true, language: selectedLanguage }
+  }, '*');
+
+  // Show confirmation
+  showAutoReadConfirmation(selectedLanguage);
+}
+
+/**
+ * Show language selection modal for Auto Read Mode
+ * @returns {Promise<string|null>} Selected language code or null if cancelled
+ */
+function showLanguageSelectionModal() {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.2s ease-out;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    `;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: #181818;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    `;
+
+    const languages = [
+      { code: 'auto', name: 'Auto-Detect', icon: '🌍', description: 'Read in original language (no translation)' },
+      { code: 'tr', name: 'Türkçe', icon: '🇹🇷', description: 'Translate and read in Turkish' },
+      { code: 'en', name: 'English', icon: '🇺🇸', description: 'Translate and read in English' },
+      { code: 'de', name: 'Deutsch', icon: '🇩🇪', description: 'Translate and read in German' },
+      { code: 'fr', name: 'Français', icon: '🇫🇷', description: 'Translate and read in French' },
+      { code: 'es', name: 'Español', icon: '🇪🇸', description: 'Translate and read in Spanish' },
+      { code: 'it', name: 'Italiano', icon: '🇮🇹', description: 'Translate and read in Italian' },
+      { code: 'ja', name: '日本語', icon: '🇯🇵', description: 'Translate and read in Japanese' },
+      { code: 'zh', name: '中文', icon: '🇨🇳', description: 'Translate and read in Chinese' }
+    ];
+
+    modal.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+        <span style="font-size: 32px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">🎧</span>
+        <div>
+          <h2 style="
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #4CAF50);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+          ">Auto Read Mode</h2>
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: #a0a0a0;">
+            Select voice language - works with Bluetooth headphones
+          </p>
+        </div>
+      </div>
+
+      <div id="language-options" style="margin-bottom: 20px;"></div>
+
+      <div style="
+        background: rgba(76, 175, 80, 0.1);
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        padding: 16px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      ">
+        <div style="display: flex; align-items: start; gap: 12px;">
+          <span style="font-size: 24px;">💡</span>
+          <div style="font-size: 13px; color: #e0e0e0; line-height: 1.5;">
+            <div style="font-weight: 600; color: #4CAF50; margin-bottom: 4px;">How it works:</div>
+            • Paragraphs you look at will be read aloud automatically<br>
+            • Connect your Bluetooth headphones for best experience<br>
+            • You can disable this mode anytime
+          </div>
+        </div>
+      </div>
+
+      <button id="lang-cancel-btn" style="
+        width: 100%;
+        padding: 14px;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        background: transparent;
+        color: #a0a0a0;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: inherit;
+      ">Cancel</button>
+    `;
+
+    // Add language option buttons
+    const optionsContainer = modal.querySelector('#language-options');
+    languages.forEach(lang => {
+      const langBtn = document.createElement('button');
+      langBtn.className = 'lang-option-btn';
+      langBtn.style.cssText = `
+        width: 100%;
+        padding: 16px;
+        margin-bottom: 10px;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        background: #0d0d0d;
+        cursor: pointer;
+        text-align: left;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      `;
+
+      langBtn.innerHTML = `
+        <span style="font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${lang.icon}</span>
+        <div style="flex: 1;">
+          <div style="font-weight: 600; font-size: 15px; color: #ffffff; margin-bottom: 2px;">
+            ${lang.name}
+          </div>
+          <div style="font-size: 12px; color: #a0a0a0;">
+            ${lang.description}
+          </div>
+        </div>
+      `;
+
+      langBtn.onmouseover = () => {
+        langBtn.style.borderColor = '#4CAF50';
+        langBtn.style.background = 'rgba(76, 175, 80, 0.08)';
+        langBtn.style.transform = 'translateX(4px)';
+      };
+
+      langBtn.onmouseout = () => {
+        langBtn.style.borderColor = '#2a2a2a';
+        langBtn.style.background = '#0d0d0d';
+        langBtn.style.transform = 'translateX(0)';
+      };
+
+      langBtn.onclick = () => {
+        overlay.style.animation = 'fadeOut 0.2s ease-out';
+        setTimeout(() => {
+          overlay.remove();
+          resolve(lang.code);
+        }, 150);
+      };
+
+      optionsContainer.appendChild(langBtn);
+    });
+
+    const cancelBtn = modal.querySelector('#lang-cancel-btn');
+    cancelBtn.onmouseover = () => {
+      cancelBtn.style.borderColor = '#ff5252';
+      cancelBtn.style.color = '#ff5252';
+      cancelBtn.style.background = 'rgba(255, 82, 82, 0.08)';
+    };
+    cancelBtn.onmouseout = () => {
+      cancelBtn.style.borderColor = '#2a2a2a';
+      cancelBtn.style.color = '#a0a0a0';
+      cancelBtn.style.background = 'transparent';
+    };
+    cancelBtn.onclick = () => {
+      overlay.style.animation = 'fadeOut 0.2s ease-out';
+      setTimeout(() => {
+        overlay.remove();
+        resolve(null);
+      }, 150);
+    };
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Close on overlay click
+    overlay.onclick = (e) => {
+      if (e.target === overlay) {
+        overlay.style.animation = 'fadeOut 0.2s ease-out';
+        setTimeout(() => {
+          overlay.remove();
+          resolve(null);
+        }, 150);
+      }
+    };
+  });
+}
+
+/**
+ * Show confirmation that Auto Read Mode is enabled
+ */
+function showAutoReadConfirmation(language) {
+  const languageNames = {
+    'auto': 'Auto-Detect',
+    'tr': 'Türkçe',
+    'en': 'English',
+    'de': 'Deutsch',
+    'fr': 'Français',
+    'es': 'Español',
+    'it': 'Italiano',
+    'ja': '日本語',
+    'zh': '中文'
+  };
+
+  const confirmation = document.createElement('div');
+  confirmation.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #181818;
+    border: 1px solid #4CAF50;
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 999999;
+    animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  `;
+
+  confirmation.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 24px;">🎧</span>
+      <div>
+        <div style="font-weight: 600; color: #4CAF50; margin-bottom: 4px;">
+          Auto Read Mode Enabled
+        </div>
+        <div style="font-size: 13px; color: #a0a0a0;">
+          Language: ${languageNames[language]}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Add slide in animation
+  if (!document.getElementById('rearead-slide-animation')) {
+    const style = document.createElement('style');
+    style.id = 'rearead-slide-animation';
+    style.textContent = `
+      @keyframes slideInRight {
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(400px); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(confirmation);
+
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    confirmation.style.animation = 'slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+    setTimeout(() => confirmation.remove(), 300);
+  }, 3000);
 }
 
 /**
@@ -1472,4 +2293,114 @@ function requestTTSApiKeyFromUser() {
       }
     });
   });
+}
+
+// ============================================================================
+// GESTURE NAVIGATION: Handle gestures for help menu modal
+// ============================================================================
+
+let gestureMenuNavigation = {
+  enabled: false,
+  currentIndex: 0,
+  options: [],
+  menuElement: null
+};
+
+// Listen for gestures from content-script
+window.addEventListener('message', (event) => {
+  if (event.origin !== window.location.origin) return;
+
+  if (event.data.type === 'REAREAD_GESTURE') {
+    handleGestureInMenu(event.data.gesture);
+  }
+});
+
+function handleGestureInMenu(gesture) {
+  if (!gestureMenuNavigation.enabled || !gestureMenuNavigation.menuElement) {
+    return;
+  }
+
+  console.log('[GESTURE NAV] Gesture detected:', gesture);
+
+  // Handle different gestures
+  if (gesture.head_right) {
+    navigateMenuNext();
+  } else if (gesture.head_left) {
+    navigateMenuPrevious();
+  } else if (gesture.double_blink) {
+    selectCurrentMenuOption();
+  } else if (gesture.head_up) {
+    closeHelpMenu();
+  }
+}
+
+function navigateMenuNext() {
+  gestureMenuNavigation.currentIndex =
+    (gestureMenuNavigation.currentIndex + 1) % gestureMenuNavigation.options.length;
+  updateMenuSelection();
+  playBeep(400, 50);
+  console.log('[GESTURE NAV] Next option:', gestureMenuNavigation.currentIndex);
+}
+
+function navigateMenuPrevious() {
+  gestureMenuNavigation.currentIndex =
+    (gestureMenuNavigation.currentIndex - 1 + gestureMenuNavigation.options.length) % gestureMenuNavigation.options.length;
+  updateMenuSelection();
+  playBeep(400, 50);
+  console.log('[GESTURE NAV] Previous option:', gestureMenuNavigation.currentIndex);
+}
+
+function selectCurrentMenuOption() {
+  const selectedButton = gestureMenuNavigation.options[gestureMenuNavigation.currentIndex];
+  if (selectedButton) {
+    console.log('[GESTURE NAV] Selecting option');
+    playBeep(600, 100);
+    selectedButton.click();
+  }
+}
+
+function closeHelpMenu() {
+  const menu = document.getElementById('rearead-help-menu');
+  if (menu) {
+    console.log('[GESTURE NAV] Closing menu');
+    menu.style.animation = 'fadeOut 0.2s ease-out';
+    setTimeout(() => menu.remove(), 200);
+    gestureMenuNavigation.enabled = false;
+  }
+}
+
+function updateMenuSelection() {
+  gestureMenuNavigation.options.forEach((btn, index) => {
+    if (index === gestureMenuNavigation.currentIndex) {
+      btn.style.background = 'linear-gradient(135deg, rgba(255, 155, 69, 0.2), rgba(255, 155, 69, 0.1))';
+      btn.style.borderColor = '#FF9B45';
+      btn.style.transform = 'scale(1.02)';
+    } else {
+      btn.style.background = '#222';
+      btn.style.borderColor = '#333';
+      btn.style.transform = 'scale(1)';
+    }
+  });
+}
+
+function playBeep(frequency = 440, duration = 100) {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.frequency.value = frequency;
+    oscillator.type = 'sine';
+
+    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + duration / 1000);
+  } catch (e) {
+    // Audio not supported
+  }
 }

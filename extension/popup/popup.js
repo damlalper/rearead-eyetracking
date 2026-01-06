@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const connectionStatus = document.getElementById('connection-status');
   const statusDot = document.getElementById('status-dot');
   const statusText = document.getElementById('status-text');
+  const btnDashboard = document.getElementById('btn-dashboard');
   const btnReconnect = document.getElementById('btn-reconnect');
   const btnDisconnect = document.getElementById('btn-disconnect');
   const btnCalibrate = document.getElementById('btn-calibrate');
@@ -18,11 +19,17 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(updateConnectionStatus, 2000);
 
   // Event listeners
+  btnDashboard.addEventListener('click', openDashboard);
   btnReconnect.addEventListener('click', handleReconnect);
   btnDisconnect.addEventListener('click', handleDisconnect);
   btnCalibrate.addEventListener('click', handleCalibrate);
   toggleVisualization.addEventListener('change', handleToggleVisualization);
   toggleReadingAssist.addEventListener('change', handleToggleReadingAssist);
+
+  // Open Dashboard
+  function openDashboard() {
+    chrome.tabs.create({ url: chrome.runtime.getURL('dashboard/dashboard.html') });
+  }
 
   // Functions
   function updateConnectionStatus() {

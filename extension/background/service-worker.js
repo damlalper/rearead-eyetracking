@@ -218,6 +218,167 @@ function updateConnectionStatus(status) {
   chrome.storage.local.set({ connectionStatus: status });
 }
 
+// AUTO READ MODE: Translate text using free translation APIs (no API key needed)
+async function handleTranslation({ text, fromLanguage, toLanguage }) {
+  // Try multiple free translation services in order
+  const services = [
+    { name: 'MyMemory', func: translateWithMyMemory },
+    { name: 'LibreTranslate', func: translateWithLibreTranslate },
+    { name: 'Lingva', func: translateWithLingva },
+    { name: 'GoogleTranslateProxy', func: translateWithGoogleProxy }
+  ];
+
+  for (const service of services) {
+    try {
+      console.log(`[TRANSLATION] Trying ${service.name}...`);
+      const translation = await service.func(text, fromLanguage, toLanguage);
+
+      if (translation && translation.trim()) {
+        console.log(`[TRANSLATION] ${service.name} success: ${fromLanguage} → ${toLanguage}`);
+        return translation;
+      }
+    } catch (error) {
+      console.warn(`[TRANSLATION] ${service.name} failed:`, error.message);
+    }
+  }
+
+  throw new Error('All translation services failed');
+}
+
+// 1. MyMemory API (free, 500 char limit per request, reliable)
+async function translateWithMyMemory(text, fromLanguage, toLanguage) {
+  const langMap = {
+    'Turkish': 'tr', 'English': 'en', 'German': 'de',
+    'French': 'fr', 'Spanish': 'es', 'Italian': 'it',
+    'Japanese': 'ja', 'Chinese': 'zh'
+  };
+
+  const fromLang = langMap[fromLanguage] || 'en';
+  const toLang = langMap[toLanguage] || 'en';
+
+  // Split text if longer than 500 chars
+  if (text.length > 500) {
+    const chunks = text.match(/.{1,450}/g) || [];
+    const translations = [];
+
+    for (const chunk of chunks) {
+      const encodedText = encodeURIComponent(chunk);
+      const url = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=${fromLang}|${toLang}`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.responseStatus === 200 && data.responseData?.translatedText) {
+        translations.push(data.responseData.translatedText);
+      }
+    }
+
+    return translations.join(' ');
+  }
+
+  const encodedText = encodeURIComponent(text);
+  const url = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=${fromLang}|${toLang}`;
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  const data = await response.json();
+
+  if (data.responseStatus === 200 && data.responseData?.translatedText) {
+    return data.responseData.translatedText.trim();
+  }
+
+  throw new Error('Invalid response');
+}
+
+// 2. LibreTranslate (free, open-source, public instance)
+async function translateWithLibreTranslate(text, fromLanguage, toLanguage) {
+  const langMap = {
+    'Turkish': 'tr', 'English': 'en', 'German': 'de',
+    'French': 'fr', 'Spanish': 'es', 'Italian': 'it',
+    'Japanese': 'ja', 'Chinese': 'zh'
+  };
+
+  const fromLang = langMap[fromLanguage] || 'en';
+  const toLang = langMap[toLanguage] || 'en';
+
+  const response = await fetch('https://libretranslate.com/translate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      q: text,
+      source: fromLang,
+      target: toLang,
+      format: 'text'
+    })
+  });
+
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  const data = await response.json();
+
+  if (data.translatedText) {
+    return data.translatedText.trim();
+  }
+
+  throw new Error('Invalid response');
+}
+
+// 3. Lingva Translate (Google Translate proxy, free)
+async function translateWithLingva(text, fromLanguage, toLanguage) {
+  const langMap = {
+    'Turkish': 'tr', 'English': 'en', 'German': 'de',
+    'French': 'fr', 'Spanish': 'es', 'Italian': 'it',
+    'Japanese': 'ja', 'Chinese': 'zh'
+  };
+
+  const fromLang = langMap[fromLanguage] || 'en';
+  const toLang = langMap[toLanguage] || 'en';
+
+  const encodedText = encodeURIComponent(text);
+  const url = `https://lingva.ml/api/v1/${fromLang}/${toLang}/${encodedText}`;
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  const data = await response.json();
+
+  if (data.translation) {
+    return data.translation.trim();
+  }
+
+  throw new Error('Invalid response');
+}
+
+// 4. Google Translate Simple Proxy (free, simple)
+async function translateWithGoogleProxy(text, fromLanguage, toLanguage) {
+  const langMap = {
+    'Turkish': 'tr', 'English': 'en', 'German': 'de',
+    'French': 'fr', 'Spanish': 'es', 'Italian': 'it',
+    'Japanese': 'ja', 'Chinese': 'zh'
+  };
+
+  const fromLang = langMap[fromLanguage] || 'en';
+  const toLang = langMap[toLanguage] || 'en';
+
+  const encodedText = encodeURIComponent(text);
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${fromLang}&tl=${toLang}&dt=t&q=${encodedText}`;
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+  const data = await response.json();
+
+  if (data && data[0] && Array.isArray(data[0])) {
+    const translation = data[0].map(item => item[0]).join('');
+    return translation.trim();
+  }
+
+  throw new Error('Invalid response');
+}
+
 // Handle messages from popup or content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.type) {
@@ -257,6 +418,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
       sendResponse({ success: true });
       break;
+
+    case 'TRANSLATE_TEXT':
+      // Handle translation request using Gemini API
+      handleTranslation(message.data)
+        .then(translation => {
+          sendResponse({ success: true, translation });
+        })
+        .catch(error => {
+          sendResponse({ success: false, error: error.message });
+        });
+      return true; // Keep channel open for async response
 
     default:
       sendResponse({ error: 'Unknown message type' });
