@@ -67,6 +67,9 @@ let gestureState = {
   doubleBlinkCooldown: 1000 // 1 saniye cooldown
 };
 
+// LLM HELPER MENU STATE: Pause tracking when menu is open
+let llmHelperOpen = false;
+
 // Fast/slow loops
 let lastViewportGaze = { x: 0, y: 0 };
 let analysisIntervalId = null;
@@ -544,6 +547,11 @@ function updateDebugPanel(paragraphKey, lineIndex, totalLines, lineText) {
 
 // SLOW LOOP: Analyze reading (250ms)
 function analyzeReadingBehavior() {
+  // LLM HELPER MENU: Skip tracking when menu is open (user not reading)
+  if (llmHelperOpen) {
+    return;
+  }
+
   // GAZE STALE GUARD: Skip analysis if gaze data is stale
   if (Date.now() - lastGazeTimestamp > MAX_GAZE_AGE_MS) {
     updateDebugPanel(null, -1, 0, '');
@@ -1517,6 +1525,12 @@ window.addEventListener('message', (event) => {
       autoReadMode.currentAudio = null;
       autoReadMode.isReading = false;
     }
+  }
+
+  if (event.data.type === 'REAREAD_MENU_STATE') {
+    const { open } = event.data.data;
+    llmHelperOpen = open;
+    console.log(`[LLM HELPER] Menu ${open ? 'opened' : 'closed'} - tracking ${open ? 'paused' : 'resumed'}`);
   }
 });
 

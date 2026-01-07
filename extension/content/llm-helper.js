@@ -367,7 +367,7 @@ function showHelpMenu({ key, text }) {
   const existingMenu = document.getElementById('rearead-help-menu');
   if (existingMenu) existingMenu.remove();
 
-  // Create menu overlay with animation
+  // Create menu overlay without backdrop (transparent clickable area)
   const menuOverlay = document.createElement('div');
   menuOverlay.id = 'rearead-help-menu';
   menuOverlay.style.cssText = `
@@ -376,30 +376,36 @@ function showHelpMenu({ key, text }) {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
     z-index: 999999;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.2s ease-out;
+    align-items: stretch;
+    justify-content: flex-end;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   `;
 
-  // Create menu container with dark theme
+  // Create menu container with dark theme (RIGHT SIDEBAR STYLE)
   const menuContainer = document.createElement('div');
   menuContainer.style.cssText = `
     background: #181818;
-    border: 1px solid #2a2a2a;
-    border-radius: 16px;
-    padding: 28px;
-    max-width: 440px;
-    width: 90%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 1px solid #2a2a2a;
+    padding: 32px 28px;
+    width: 420px;
+    max-width: 90vw;
+    height: 100%;
+    overflow-y: auto;
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.8);
+    animation: slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: #2a2a2a #0d0d0d;
   `;
 
-  // Add keyframes for animations
+  // Custom scrollbar for webkit browsers
+  menuContainer.style.setProperty('scrollbar-width', 'thin');
+  menuContainer.style.setProperty('scrollbar-color', '#2a2a2a #0d0d0d');
+
+  // Add keyframes for animations and scrollbar styles
   if (!document.getElementById('rearead-animations')) {
     const style = document.createElement('style');
     style.id = 'rearead-animations';
@@ -407,6 +413,30 @@ function showHelpMenu({ key, text }) {
       @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
+      }
+      @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+      @keyframes slideInFromRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0.8;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      @keyframes slideOutToRight {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0.8;
+        }
       }
       @keyframes slideUp {
         from {
@@ -422,15 +452,30 @@ function showHelpMenu({ key, text }) {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.5; }
       }
+
+      /* Custom scrollbar for sidebar */
+      #rearead-help-menu div::-webkit-scrollbar {
+        width: 8px;
+      }
+      #rearead-help-menu div::-webkit-scrollbar-track {
+        background: #0d0d0d;
+      }
+      #rearead-help-menu div::-webkit-scrollbar-thumb {
+        background: #2a2a2a;
+        border-radius: 4px;
+      }
+      #rearead-help-menu div::-webkit-scrollbar-thumb:hover {
+        background: #3a3a3a;
+      }
     `;
     document.head.appendChild(style);
   }
 
-  // Menu title with gradient
+  // Menu title with gradient - COMPACT VERSION
   const title = document.createElement('div');
   title.innerHTML = `
     <h3 style="
-      margin: 0 0 8px 0;
+      margin: 0 0 4px 0;
       font-size: 20px;
       font-weight: 700;
       background: linear-gradient(135deg, #ffffff, #FF9B45);
@@ -440,118 +485,138 @@ function showHelpMenu({ key, text }) {
       letter-spacing: -0.02em;
     ">🎯 Reading Assistance</h3>
     <div style="
-      font-size: 11px;
-      color: rgba(255,255,255,0.5);
-      margin-bottom: 16px;
-      padding: 8px 12px;
-      background: rgba(76, 175, 80, 0.1);
-      border-radius: 6px;
-      border: 1px solid rgba(76, 175, 80, 0.2);
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 20px;
     ">
-      💡 <strong>Gesture Control:</strong> 👁️👁️ Double blink to select • ➡️ Right to next • ⬅️ Left to previous • ⬆️ Up to close
+      👁️👁️ Double blink • ⬆️ Up to close
     </div>
   `;
 
-  // Menu options
-  const options = [
+  // CATEGORIZED OPTIONS - Cleaner organization
+  const categories = [
     {
-      id: 'summary',
-      icon: '📝',
-      label: 'Summarize',
-      description: 'Get a concise summary of this paragraph'
+      title: '🤖 AI Assistance',
+      options: [
+        { id: 'summary', icon: '📝', label: 'Summarize' },
+        { id: 'keypoints', icon: '🎯', label: 'Key Points' },
+        { id: 'vocabulary', icon: '📚', label: 'Vocabulary' },
+        { id: 'ask_question', icon: '💬', label: 'Ask Question' }
+      ]
     },
     {
-      id: 'vocabulary',
-      icon: '📚',
-      label: 'Vocabulary',
-      description: 'Explain difficult words with examples'
-    },
-    {
-      id: 'ask_question',
-      icon: '💬',
-      label: 'Ask Question',
-      description: 'Ask anything about this paragraph'
-    },
-    {
-      id: 'keypoints',
-      icon: '🎯',
-      label: 'Key Points',
-      description: 'Extract main ideas in bullet format'
-    },
-    {
-      id: 'audio',
-      icon: '🔊',
-      label: 'Read Aloud',
-      description: 'Listen to this paragraph with text-to-speech'
-    },
-    {
-      id: 'auto_read',
-      icon: '🎧',
-      label: 'Auto Read Mode',
-      description: 'Connect Bluetooth headphones and learn while listening - 9 languages supported'
-    },
-    {
-      id: 'zoom',
-      icon: '🔍',
-      label: 'Zoom',
-      description: 'View this paragraph in larger, more readable text'
+      title: '🎧 Audio & Reading',
+      options: [
+        { id: 'audio', icon: '🔊', label: 'Read Aloud' },
+        { id: 'auto_read', icon: '🎧', label: 'Auto Read' },
+        { id: 'zoom', icon: '🔍', label: 'Zoom Text' }
+      ]
     }
   ];
 
   menuContainer.appendChild(title);
 
-  options.forEach(option => {
-    const optionBtn = document.createElement('button');
-    optionBtn.setAttribute('data-option', option.id); // For gesture navigation
-    optionBtn.style.cssText = `
-      width: 100%;
-      padding: 16px;
-      margin-bottom: 10px;
-      border: 1px solid #2a2a2a;
-      border-radius: 10px;
-      background: #222;
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
+  // Render categories with grid layout
+  categories.forEach((category, categoryIndex) => {
+    // Category header
+    const categoryHeader = document.createElement('div');
+    categoryHeader.style.cssText = `
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 12px;
+      margin-top: ${categoryIndex > 0 ? '24px' : '0'};
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    `;
+    categoryHeader.textContent = category.title;
+    menuContainer.appendChild(categoryHeader);
+
+    // Grid container for options
+    const gridContainer = document.createElement('div');
+    gridContainer.style.cssText = `
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 8px;
     `;
 
-    optionBtn.innerHTML = `
-      <div style="display: flex; align-items: start; gap: 14px; position: relative; z-index: 1;">
-        <span style="font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${option.icon}</span>
-        <div style="flex: 1;">
-          <div style="font-weight: 600; font-size: 15px; color: #ffffff; margin-bottom: 4px; letter-spacing: -0.01em;">
-            ${option.label}
-          </div>
-          <div style="font-size: 13px; color: #a0a0a0; line-height: 1.4;">
-            ${option.description}
-          </div>
+    category.options.forEach(option => {
+      const optionBtn = document.createElement('button');
+      optionBtn.setAttribute('data-option', option.id);
+      optionBtn.style.cssText = `
+        padding: 16px 12px;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        background: #222;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      `;
+
+      // Descriptions for each option
+      const descriptions = {
+        'summary': 'Concise summary',
+        'keypoints': 'Bullet points',
+        'vocabulary': 'Word meanings',
+        'ask_question': 'Ask anything',
+        'audio': 'Listen to text',
+        'auto_read': 'BT headphones • 9 languages',
+        'zoom': 'Larger text'
+      };
+
+      optionBtn.innerHTML = `
+        <span style="font-size: 32px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${option.icon}</span>
+        <div style="font-weight: 600; font-size: 13px; color: #ffffff; letter-spacing: -0.01em;">
+          ${option.label}
         </div>
-      </div>
-    `;
+        <div class="option-desc" style="font-size: 10px; color: rgba(255, 255, 255, 0.4); margin-top: 2px; line-height: 1.2;">
+          ${descriptions[option.id]}
+        </div>
+      `;
 
-    optionBtn.onmouseover = () => {
-      optionBtn.style.borderColor = '#FF9B45';
-      optionBtn.style.background = 'rgba(255, 155, 69, 0.08)';
-      optionBtn.style.transform = 'translateX(4px)';
-    };
+      optionBtn.onmouseover = () => {
+        optionBtn.style.borderColor = '#FF9B45';
+        optionBtn.style.background = 'rgba(255, 155, 69, 0.12)';
+        optionBtn.style.transform = 'translateX(-6px)';
+        optionBtn.style.boxShadow = '0 4px 16px rgba(255, 155, 69, 0.15)';
+        // Brighten description on hover
+        const desc = optionBtn.querySelector('.option-desc');
+        if (desc) desc.style.color = 'rgba(255, 155, 69, 0.8)';
+      };
 
-    optionBtn.onmouseout = () => {
-      optionBtn.style.borderColor = '#2a2a2a';
-      optionBtn.style.background = '#0d0d0d';
-      optionBtn.style.transform = 'translateX(0)';
-    };
+      optionBtn.onmouseout = () => {
+        optionBtn.style.borderColor = '#2a2a2a';
+        optionBtn.style.background = '#222';
+        optionBtn.style.transform = 'translateX(0)';
+        optionBtn.style.boxShadow = 'none';
+        // Restore description color
+        const desc = optionBtn.querySelector('.option-desc');
+        if (desc) desc.style.color = 'rgba(255, 255, 255, 0.4)';
+      };
 
-    optionBtn.onclick = () => {
-      menuOverlay.style.animation = 'fadeOut 0.2s ease-out';
-      setTimeout(() => {
-        menuOverlay.remove();
-        handleHelpOption({ option: option.id, key, text });
-      }, 150);
-    };
+      optionBtn.onclick = () => {
+        menuOverlay.style.animation = 'fadeOut 0.3s ease-out';
+        menuContainer.style.animation = 'slideOutToRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        setTimeout(() => {
+          menuOverlay.remove();
+          // Notify content-script: Menu closed (resume tracking)
+          window.postMessage({
+            type: 'REAREAD_MENU_STATE',
+            data: { open: false }
+          }, '*');
+          handleHelpOption({ option: option.id, key, text });
+        }, 300);
+      };
 
-    menuContainer.appendChild(optionBtn);
+      gridContainer.appendChild(optionBtn);
+    });
+
+    menuContainer.appendChild(gridContainer);
   });
 
   // Close button with modern styling
@@ -582,17 +647,46 @@ function showHelpMenu({ key, text }) {
     closeBtn.style.background = 'transparent';
   };
   closeBtn.onclick = () => {
-    menuOverlay.style.animation = 'fadeOut 0.2s ease-out';
-    setTimeout(() => menuOverlay.remove(), 150);
+    menuOverlay.style.animation = 'fadeOut 0.3s ease-out';
+    menuContainer.style.animation = 'slideOutToRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+    setTimeout(() => {
+      menuOverlay.remove();
+      // Notify content-script: Menu closed (resume tracking)
+      window.postMessage({
+        type: 'REAREAD_MENU_STATE',
+        data: { open: false }
+      }, '*');
+    }, 300);
   };
 
   menuContainer.appendChild(closeBtn);
   menuOverlay.appendChild(menuContainer);
   document.body.appendChild(menuOverlay);
 
-  // Close on overlay click
+  // Notify content-script: Menu opened (pause tracking)
+  window.postMessage({
+    type: 'REAREAD_MENU_STATE',
+    data: { open: true }
+  }, '*');
+
+  // Prevent clicks inside menu from closing it
+  menuContainer.onclick = (e) => {
+    e.stopPropagation();
+  };
+
+  // Close on overlay click (outside menu) with animation
   menuOverlay.onclick = (e) => {
-    if (e.target === menuOverlay) menuOverlay.remove();
+    if (e.target === menuOverlay) {
+      menuContainer.style.animation = 'slideOutToRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+      setTimeout(() => {
+        menuOverlay.remove();
+        // Notify content-script: Menu closed (resume tracking)
+        window.postMessage({
+          type: 'REAREAD_MENU_STATE',
+          data: { open: false }
+        }, '*');
+      }, 400);
+    }
   };
 
   // GESTURE NAVIGATION: Enable gesture control for this menu
