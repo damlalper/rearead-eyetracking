@@ -21,9 +21,14 @@
 .claude/
 
 # ReaRead specific
+# Do not commit thesis draft or local artifacts
+tez.md
+tez.*
 users/
 companion/users/
 companion/logs/
+companion/venv/
+companion/*.db
 *.log
 config.local.json
 .env

@@ -5,6 +5,174 @@
 // Author: ReaRead Team
 // Purpose: Provide AI-powered reading assistance without affecting core features
 
+// GESTURE NAVIGATION STATE - Use window object to prevent redeclaration on multiple loads
+if (!window.reareadGestureMenuNavigation) {
+  window.reareadGestureMenuNavigation = {
+    enabled: false,
+    currentIndex: 0,
+    options: [],
+    menuElement: null,
+    lastNavTime: 0,
+    navCooldown: 300 // OPTIMIZED: 300ms for faster hands-free navigation (was 500ms)
+  };
+}
+const gestureMenuNavigation = window.reareadGestureMenuNavigation;
+
+// Listen for gestures from content script
+window.addEventListener('message', (event) => {
+  // Verify origin for security
+  if (event.origin !== window.location.origin) {
+    console.warn('[GESTURE NAV] Message from different origin, ignoring:', event.origin);
+    return;
+  }
+
+  if (event.data.type === 'REAREAD_GESTURE') {
+    console.log('[GESTURE NAV] Received gesture:', event.data.gesture, 'enabled:', gestureMenuNavigation.enabled);
+    if (gestureMenuNavigation.enabled) {
+      handleMenuGesture(event.data.gesture);
+    } else {
+      console.log('[GESTURE NAV] Gesture navigation disabled, ignoring gesture');
+    }
+  }
+});
+
+function handleMenuGesture(gesture) {
+  const now = Date.now();
+  if (now - gestureMenuNavigation.lastNavTime < gestureMenuNavigation.navCooldown) {
+    console.log('[GESTURE NAV] Cooldown active, ignoring gesture');
+    return;
+  }
+
+  if (!gestureMenuNavigation.menuElement || !document.body.contains(gestureMenuNavigation.menuElement)) {
+    console.warn('[GESTURE NAV] Menu element not found or disconnected, disabling navigation');
+    gestureMenuNavigation.enabled = false;
+    return;
+  }
+
+  if (!gesture || typeof gesture !== 'object') {
+    console.warn('[GESTURE NAV] Invalid gesture object:', gesture);
+    return;
+  }
+
+  // Double Blink = Select / Click
+  if (gesture.double_blink) {
+    console.log('[GESTURE NAV] Double blink detected - Selecting option index:', gestureMenuNavigation.currentIndex);
+    const selectedBtn = gestureMenuNavigation.options[gestureMenuNavigation.currentIndex];
+    if (selectedBtn) {
+      console.log('[GESTURE NAV] Button found, clicking:', selectedBtn.getAttribute('data-option'));
+      gestureMenuNavigation.lastNavTime = now;
+      
+      // Add visual feedback before clicking
+      selectedBtn.style.transform = 'scale(0.98)';
+      selectedBtn.style.background = '#FF9B45';
+      selectedBtn.style.color = '#000';
+      
+      setTimeout(() => {
+        console.log('[GESTURE NAV] Executing click on button');
+        selectedBtn.click();
+      }, 150);
+    } else {
+      console.error('[GESTURE NAV] Selected button not found at index:', gestureMenuNavigation.currentIndex);
+    }
+    return;
+  }
+
+  // Head Left = Previous Option
+  if (gesture.head_left) {
+    console.log('[GESTURE NAV] Head left - Previous option (current:', gestureMenuNavigation.currentIndex, ')');
+    gestureMenuNavigation.currentIndex = (gestureMenuNavigation.currentIndex - 1 + gestureMenuNavigation.options.length) % gestureMenuNavigation.options.length;
+    console.log('[GESTURE NAV] New index:', gestureMenuNavigation.currentIndex);
+    updateMenuSelection();
+    gestureMenuNavigation.lastNavTime = now;
+    return;
+  }
+
+  // Head Right = Next Option
+  if (gesture.head_right) {
+    console.log('[GESTURE NAV] Head right - Next option (current:', gestureMenuNavigation.currentIndex, ')');
+    gestureMenuNavigation.currentIndex = (gestureMenuNavigation.currentIndex + 1) % gestureMenuNavigation.options.length;
+    console.log('[GESTURE NAV] New index:', gestureMenuNavigation.currentIndex);
+    updateMenuSelection();
+    gestureMenuNavigation.lastNavTime = now;
+    return;
+  }
+  
+  // Head Up = Close Menu (Cancel)
+  if (gesture.head_up) {
+    console.log('[GESTURE NAV] Closing menu');
+    // Find the cancel button - look for button with "Cancel" text or last button without data-option
+    const menu = document.getElementById('rearead-help-menu');
+    if (menu) {
+      const menuContainer = menu.querySelector('div');
+      // Try to find cancel button by text content
+      const allButtons = menuContainer.querySelectorAll('button');
+      let closeBtn = null;
+      for (const btn of allButtons) {
+        if (btn.textContent.includes('Cancel') || btn.textContent.includes('✕')) {
+          closeBtn = btn;
+          break;
+        }
+      }
+      // Fallback: last button without data-option
+      if (!closeBtn) {
+        for (let i = allButtons.length - 1; i >= 0; i--) {
+          if (!allButtons[i].hasAttribute('data-option')) {
+            closeBtn = allButtons[i];
+            break;
+          }
+        }
+      }
+      
+      if (closeBtn) {
+        console.log('[GESTURE NAV] Found close button, clicking');
+        closeBtn.click();
+      } else {
+        // Fallback: close menu directly
+        console.log('[GESTURE NAV] Close button not found, closing menu directly');
+        menu.style.animation = 'fadeOut 0.3s ease-out';
+        if (menuContainer) {
+          menuContainer.style.animation = 'slideOutToRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        }
+        setTimeout(() => {
+          menu.remove();
+          // Notify content-script: Menu closed (resume tracking)
+          window.postMessage({
+            type: 'REAREAD_MENU_STATE',
+            data: { open: false }
+          }, '*');
+        }, 400);
+        gestureMenuNavigation.enabled = false;
+      }
+    }
+    gestureMenuNavigation.lastNavTime = now;
+  }
+}
+
+function updateMenuSelection() {
+  if (gestureMenuNavigation.options.length === 0) {
+    console.warn('[GESTURE NAV] No options available for selection');
+    return;
+  }
+
+  console.log('[GESTURE NAV] Updating selection, current index:', gestureMenuNavigation.currentIndex, 'total options:', gestureMenuNavigation.options.length);
+  
+  gestureMenuNavigation.options.forEach((btn, index) => {
+    if (index === gestureMenuNavigation.currentIndex) {
+      // Highlight selected (grid layout compatible)
+      btn.style.borderColor = '#FF9B45';
+      btn.style.background = 'linear-gradient(135deg, rgba(255, 155, 69, 0.2), rgba(255, 155, 69, 0.1))';
+      btn.style.transform = 'scale(1.02)';
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      console.log('[GESTURE NAV] Highlighted option:', btn.getAttribute('data-option'));
+    } else {
+      // Reset others
+      btn.style.borderColor = '#2a2a2a';
+      btn.style.background = '#222';
+      btn.style.transform = 'scale(1)';
+    }
+  });
+}
+
 /**
  * Core LLM call function - isolated and reusable (Gemini primary, Groq fallback)
  * @param {Object} options - Configuration object
@@ -14,13 +182,8 @@
  * @returns {Promise<string>} - LLM response text
  */
 async function callLLM({ mode, text, question = '' }) {
-  // Try Gemini first, fallback to Groq if fails
-  try {
-    return await callGemini({ mode, text, question });
-  } catch (geminiError) {
-    console.warn('[LLM] Gemini failed, trying Groq fallback:', geminiError);
-    return await callGroq({ mode, text, question });
-  }
+  // Use Groq only (Gemini disabled for demo)
+  return await callGroq({ mode, text, question });
 }
 
 /**
@@ -96,17 +259,17 @@ async function callGemini({ mode, text, question }) {
  * Call Groq API (Fallback LLM)
  */
 async function callGroq({ mode, text, question }) {
-  // Load Groq API key from storage
+  // Load Groq API key from storage (configured in config.js or chrome storage)
   let apiKey = await loadApiKey();
 
-  // If no API key, request it from user with custom UI
+  // If no API key found, try loading from chrome.storage.local (set by background script)
   if (!apiKey) {
-    apiKey = await requestApiKeyFromUser();
-    if (!apiKey) {
-      throw new Error('Groq API key required. Get a free key from console.groq.com');
-    }
-    // Save for future use
-    await saveApiKey(apiKey);
+    apiKey = await loadGroqApiKeyFromLocal();
+  }
+
+  // If still no API key, throw error without showing popup
+  if (!apiKey) {
+    throw new Error('Groq API key not configured. Please add your key to config.js');
   }
 
   // Configuration
@@ -367,7 +530,7 @@ function showHelpMenu({ key, text }) {
   const existingMenu = document.getElementById('rearead-help-menu');
   if (existingMenu) existingMenu.remove();
 
-  // Create menu overlay with animation
+  // Create menu overlay without backdrop (transparent clickable area)
   const menuOverlay = document.createElement('div');
   menuOverlay.id = 'rearead-help-menu';
   menuOverlay.style.cssText = `
@@ -376,30 +539,36 @@ function showHelpMenu({ key, text }) {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
     z-index: 999999;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.2s ease-out;
+    align-items: stretch;
+    justify-content: flex-end;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
   `;
 
-  // Create menu container with dark theme
+  // Create menu container with dark theme (RIGHT SIDEBAR STYLE)
   const menuContainer = document.createElement('div');
   menuContainer.style.cssText = `
     background: #181818;
-    border: 1px solid #2a2a2a;
-    border-radius: 16px;
-    padding: 28px;
-    max-width: 440px;
-    width: 90%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-left: 1px solid #2a2a2a;
+    padding: 32px 28px;
+    width: 420px;
+    max-width: 90vw;
+    height: 100%;
+    overflow-y: auto;
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.8);
+    animation: slideInFromRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: #2a2a2a #0d0d0d;
   `;
 
-  // Add keyframes for animations
+  // Custom scrollbar for webkit browsers
+  menuContainer.style.setProperty('scrollbar-width', 'thin');
+  menuContainer.style.setProperty('scrollbar-color', '#2a2a2a #0d0d0d');
+
+  // Add keyframes for animations and scrollbar styles
   if (!document.getElementById('rearead-animations')) {
     const style = document.createElement('style');
     style.id = 'rearead-animations';
@@ -407,6 +576,30 @@ function showHelpMenu({ key, text }) {
       @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
+      }
+      @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+      @keyframes slideInFromRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0.8;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      @keyframes slideOutToRight {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0.8;
+        }
       }
       @keyframes slideUp {
         from {
@@ -422,15 +615,30 @@ function showHelpMenu({ key, text }) {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.5; }
       }
+
+      /* Custom scrollbar for sidebar */
+      #rearead-help-menu div::-webkit-scrollbar {
+        width: 8px;
+      }
+      #rearead-help-menu div::-webkit-scrollbar-track {
+        background: #0d0d0d;
+      }
+      #rearead-help-menu div::-webkit-scrollbar-thumb {
+        background: #2a2a2a;
+        border-radius: 4px;
+      }
+      #rearead-help-menu div::-webkit-scrollbar-thumb:hover {
+        background: #3a3a3a;
+      }
     `;
     document.head.appendChild(style);
   }
 
-  // Menu title with gradient
+  // Menu title with gradient - COMPACT VERSION
   const title = document.createElement('div');
   title.innerHTML = `
     <h3 style="
-      margin: 0 0 8px 0;
+      margin: 0 0 4px 0;
       font-size: 20px;
       font-weight: 700;
       background: linear-gradient(135deg, #ffffff, #FF9B45);
@@ -440,118 +648,138 @@ function showHelpMenu({ key, text }) {
       letter-spacing: -0.02em;
     ">🎯 Reading Assistance</h3>
     <div style="
-      font-size: 11px;
-      color: rgba(255,255,255,0.5);
-      margin-bottom: 16px;
-      padding: 8px 12px;
-      background: rgba(76, 175, 80, 0.1);
-      border-radius: 6px;
-      border: 1px solid rgba(76, 175, 80, 0.2);
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 20px;
     ">
-      💡 <strong>Gesture Control:</strong> 👁️👁️ Double blink to select • ➡️ Right to next • ⬅️ Left to previous • ⬆️ Up to close
+      👁️👁️ Double blink • ⬆️ Up to close
     </div>
   `;
 
-  // Menu options
-  const options = [
+  // CATEGORIZED OPTIONS - Cleaner organization
+  const categories = [
     {
-      id: 'summary',
-      icon: '📝',
-      label: 'Summarize',
-      description: 'Get a concise summary of this paragraph'
+      title: '🤖 AI Assistance',
+      options: [
+        { id: 'summary', icon: '📝', label: 'Summarize' },
+        { id: 'keypoints', icon: '🎯', label: 'Key Points' },
+        { id: 'vocabulary', icon: '📚', label: 'Vocabulary' },
+        { id: 'ask_question', icon: '💬', label: 'Ask Question' }
+      ]
     },
     {
-      id: 'vocabulary',
-      icon: '📚',
-      label: 'Vocabulary',
-      description: 'Explain difficult words with examples'
-    },
-    {
-      id: 'ask_question',
-      icon: '💬',
-      label: 'Ask Question',
-      description: 'Ask anything about this paragraph'
-    },
-    {
-      id: 'keypoints',
-      icon: '🎯',
-      label: 'Key Points',
-      description: 'Extract main ideas in bullet format'
-    },
-    {
-      id: 'audio',
-      icon: '🔊',
-      label: 'Read Aloud',
-      description: 'Listen to this paragraph with text-to-speech'
-    },
-    {
-      id: 'auto_read',
-      icon: '🎧',
-      label: 'Auto Read Mode',
-      description: 'Connect Bluetooth headphones and learn while listening - 9 languages supported'
-    },
-    {
-      id: 'zoom',
-      icon: '🔍',
-      label: 'Zoom',
-      description: 'View this paragraph in larger, more readable text'
+      title: '🎧 Audio & Reading',
+      options: [
+        { id: 'audio', icon: '🔊', label: 'Read Aloud' },
+        { id: 'auto_read', icon: '🎧', label: 'Auto Read' },
+        { id: 'zoom', icon: '🔍', label: 'Zoom Text' }
+      ]
     }
   ];
 
   menuContainer.appendChild(title);
 
-  options.forEach(option => {
-    const optionBtn = document.createElement('button');
-    optionBtn.setAttribute('data-option', option.id); // For gesture navigation
-    optionBtn.style.cssText = `
-      width: 100%;
-      padding: 16px;
-      margin-bottom: 10px;
-      border: 1px solid #2a2a2a;
-      border-radius: 10px;
-      background: #222;
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
+  // Render categories with grid layout
+  categories.forEach((category, categoryIndex) => {
+    // Category header
+    const categoryHeader = document.createElement('div');
+    categoryHeader.style.cssText = `
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 12px;
+      margin-top: ${categoryIndex > 0 ? '24px' : '0'};
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    `;
+    categoryHeader.textContent = category.title;
+    menuContainer.appendChild(categoryHeader);
+
+    // Grid container for options
+    const gridContainer = document.createElement('div');
+    gridContainer.style.cssText = `
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 8px;
     `;
 
-    optionBtn.innerHTML = `
-      <div style="display: flex; align-items: start; gap: 14px; position: relative; z-index: 1;">
-        <span style="font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${option.icon}</span>
-        <div style="flex: 1;">
-          <div style="font-weight: 600; font-size: 15px; color: #ffffff; margin-bottom: 4px; letter-spacing: -0.01em;">
-            ${option.label}
-          </div>
-          <div style="font-size: 13px; color: #a0a0a0; line-height: 1.4;">
-            ${option.description}
-          </div>
+    category.options.forEach(option => {
+      const optionBtn = document.createElement('button');
+      optionBtn.setAttribute('data-option', option.id);
+      optionBtn.style.cssText = `
+        padding: 16px 12px;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        background: #222;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      `;
+
+      // Descriptions for each option
+      const descriptions = {
+        'summary': 'Concise summary',
+        'keypoints': 'Bullet points',
+        'vocabulary': 'Word meanings',
+        'ask_question': 'Ask anything',
+        'audio': 'Listen to text',
+        'auto_read': 'BT headphones • 4 languages',
+        'zoom': 'Larger text'
+      };
+
+      optionBtn.innerHTML = `
+        <span style="font-size: 32px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${option.icon}</span>
+        <div style="font-weight: 600; font-size: 13px; color: #ffffff; letter-spacing: -0.01em;">
+          ${option.label}
         </div>
-      </div>
-    `;
+        <div class="option-desc" style="font-size: 10px; color: rgba(255, 255, 255, 0.4); margin-top: 2px; line-height: 1.2;">
+          ${descriptions[option.id]}
+        </div>
+      `;
 
-    optionBtn.onmouseover = () => {
-      optionBtn.style.borderColor = '#FF9B45';
-      optionBtn.style.background = 'rgba(255, 155, 69, 0.08)';
-      optionBtn.style.transform = 'translateX(4px)';
-    };
+      optionBtn.onmouseover = () => {
+        optionBtn.style.borderColor = '#FF9B45';
+        optionBtn.style.background = 'rgba(255, 155, 69, 0.12)';
+        optionBtn.style.transform = 'translateX(-6px)';
+        optionBtn.style.boxShadow = '0 4px 16px rgba(255, 155, 69, 0.15)';
+        // Brighten description on hover
+        const desc = optionBtn.querySelector('.option-desc');
+        if (desc) desc.style.color = 'rgba(255, 155, 69, 0.8)';
+      };
 
-    optionBtn.onmouseout = () => {
-      optionBtn.style.borderColor = '#2a2a2a';
-      optionBtn.style.background = '#0d0d0d';
-      optionBtn.style.transform = 'translateX(0)';
-    };
+      optionBtn.onmouseout = () => {
+        optionBtn.style.borderColor = '#2a2a2a';
+        optionBtn.style.background = '#222';
+        optionBtn.style.transform = 'translateX(0)';
+        optionBtn.style.boxShadow = 'none';
+        // Restore description color
+        const desc = optionBtn.querySelector('.option-desc');
+        if (desc) desc.style.color = 'rgba(255, 255, 255, 0.4)';
+      };
 
-    optionBtn.onclick = () => {
-      menuOverlay.style.animation = 'fadeOut 0.2s ease-out';
-      setTimeout(() => {
-        menuOverlay.remove();
-        handleHelpOption({ option: option.id, key, text });
-      }, 150);
-    };
+      optionBtn.onclick = () => {
+        menuOverlay.style.animation = 'fadeOut 0.3s ease-out';
+        menuContainer.style.animation = 'slideOutToRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+        setTimeout(() => {
+          menuOverlay.remove();
+          // Notify content-script: Menu closed (resume tracking)
+          window.postMessage({
+            type: 'REAREAD_MENU_STATE',
+            data: { open: false }
+          }, '*');
+          handleHelpOption({ option: option.id, key, text });
+        }, 300);
+      };
 
-    menuContainer.appendChild(optionBtn);
+      gridContainer.appendChild(optionBtn);
+    });
+
+    menuContainer.appendChild(gridContainer);
   });
 
   // Close button with modern styling
@@ -582,32 +810,65 @@ function showHelpMenu({ key, text }) {
     closeBtn.style.background = 'transparent';
   };
   closeBtn.onclick = () => {
-    menuOverlay.style.animation = 'fadeOut 0.2s ease-out';
-    setTimeout(() => menuOverlay.remove(), 150);
+    menuOverlay.style.animation = 'fadeOut 0.3s ease-out';
+    menuContainer.style.animation = 'slideOutToRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+    setTimeout(() => {
+      menuOverlay.remove();
+      // Notify content-script: Menu closed (resume tracking)
+      window.postMessage({
+        type: 'REAREAD_MENU_STATE',
+        data: { open: false }
+      }, '*');
+    }, 300);
   };
 
   menuContainer.appendChild(closeBtn);
   menuOverlay.appendChild(menuContainer);
   document.body.appendChild(menuOverlay);
 
-  // Close on overlay click
+  // Notify content-script: Menu opened (pause tracking)
+  window.postMessage({
+    type: 'REAREAD_MENU_STATE',
+    data: { open: true }
+  }, '*');
+
+  // Prevent clicks inside menu from closing it
+  menuContainer.onclick = (e) => {
+    e.stopPropagation();
+  };
+
+  // Close on overlay click (outside menu) with animation
   menuOverlay.onclick = (e) => {
-    if (e.target === menuOverlay) menuOverlay.remove();
+    if (e.target === menuOverlay) {
+      menuContainer.style.animation = 'slideOutToRight 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+      setTimeout(() => {
+        menuOverlay.remove();
+        // Notify content-script: Menu closed (resume tracking)
+        window.postMessage({
+          type: 'REAREAD_MENU_STATE',
+          data: { open: false }
+        }, '*');
+      }, 400);
+    }
   };
 
   // GESTURE NAVIGATION: Enable gesture control for this menu
   const optionButtons = menuContainer.querySelectorAll('button[data-option]');
+  console.log('[GESTURE NAV] Found', optionButtons.length, 'option buttons');
+  
   gestureMenuNavigation.enabled = true;
   gestureMenuNavigation.currentIndex = 0;
   gestureMenuNavigation.options = Array.from(optionButtons);
   gestureMenuNavigation.menuElement = menuOverlay;
+  gestureMenuNavigation.lastNavTime = 0; // Reset cooldown
 
   // Highlight first option
   if (gestureMenuNavigation.options.length > 0) {
     updateMenuSelection();
+    console.log('[GESTURE NAV] Menu opened with', gestureMenuNavigation.options.length, 'options, first option highlighted');
+  } else {
+    console.warn('[GESTURE NAV] No option buttons found! Menu may not work with gestures.');
   }
-
-  console.log('[GESTURE NAV] Menu opened with', gestureMenuNavigation.options.length, 'options');
 }
 
 /**
@@ -1368,6 +1629,22 @@ export async function loadApiKey() {
 }
 
 /**
+ * Load Groq API key from chrome.storage.local (set by background script from config.js)
+ * @returns {Promise<string>} API key
+ */
+async function loadGroqApiKeyFromLocal() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(['groqApiKey'], (result) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(result.groqApiKey || '');
+      }
+    });
+  });
+}
+
+/**
  * Save LLM API key to chrome storage
  * @param {string} apiKey - API key to save
  */
@@ -1636,191 +1913,12 @@ function requestApiKeyFromUser() {
 }
 
 /**
- * Request Gemini API key from user with custom UI dialog
+ * Request Gemini API key from user (DISABLED - no popup for demo)
  * @returns {Promise<string|null>} API key or null if cancelled
  */
 function requestGeminiApiKeyFromUser() {
-  return new Promise((resolve) => {
-    // Create modal dialog with modern dark theme
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(8px);
-      z-index: 9999999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn 0.2s ease-out;
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-    `;
-
-    modal.innerHTML = `
-      <div style="
-        background: #181818;
-        border: 1px solid #2a2a2a;
-        padding: 32px;
-        border-radius: 16px;
-        max-width: 520px;
-        width: 90%;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-        animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      ">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-          <span style="font-size: 32px;">🔑</span>
-          <h2 style="
-            margin: 0;
-            font-size: 22px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #ffffff, #4285f4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.02em;
-          ">Gemini API Key Required</h2>
-        </div>
-
-        <p style="margin: 0 0 20px 0; color: #a0a0a0; line-height: 1.6; font-size: 14px;">
-          Get a free API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #4285f4; text-decoration: none; font-weight: 600;">aistudio.google.com</a>
-        </p>
-
-        <input
-          type="text"
-          id="gemini-api-key-input"
-          placeholder="AIza..."
-          style="
-            width: 100%;
-            padding: 14px;
-            background: #0d0d0d;
-            border: 1px solid #2a2a2a;
-            border-radius: 10px;
-            font-size: 14px;
-            color: #ffffff;
-            box-sizing: border-box;
-            margin-bottom: 20px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
-          "
-        />
-
-        <div style="display: flex; gap: 12px; justify-content: flex-end;">
-          <button id="gemini-cancel-btn" style="
-            padding: 12px 24px;
-            background: transparent;
-            border: 1px solid #2a2a2a;
-            border-radius: 10px;
-            color: #a0a0a0;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-family: inherit;
-          ">Cancel</button>
-          <button id="gemini-save-btn" style="
-            padding: 12px 24px;
-            background: #4285f4;
-            border: none;
-            border-radius: 10px;
-            color: #fff;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 12px rgba(66, 133, 244, 0.25);
-            font-family: inherit;
-          ">Save Key</button>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    const input = document.getElementById('gemini-api-key-input');
-    const saveBtn = document.getElementById('gemini-save-btn');
-    const cancelBtn = document.getElementById('gemini-cancel-btn');
-
-    // Input focus effect
-    input.onfocus = () => {
-      input.style.borderColor = '#4285f4';
-      input.style.boxShadow = '0 0 0 3px rgba(66, 133, 244, 0.1)';
-    };
-    input.onblur = () => {
-      input.style.borderColor = '#2a2a2a';
-      input.style.boxShadow = 'none';
-    };
-
-    // Button hover effects
-    cancelBtn.onmouseover = () => {
-      cancelBtn.style.borderColor = '#ff5252';
-      cancelBtn.style.color = '#ff5252';
-      cancelBtn.style.background = 'rgba(255, 82, 82, 0.08)';
-    };
-    cancelBtn.onmouseout = () => {
-      cancelBtn.style.borderColor = '#2a2a2a';
-      cancelBtn.style.color = '#a0a0a0';
-      cancelBtn.style.background = 'transparent';
-    };
-
-    saveBtn.onmouseover = () => {
-      saveBtn.style.background = '#5a95f5';
-      saveBtn.style.transform = 'translateY(-2px)';
-      saveBtn.style.boxShadow = '0 6px 20px rgba(66, 133, 244, 0.35)';
-    };
-    saveBtn.onmouseout = () => {
-      saveBtn.style.background = '#4285f4';
-      saveBtn.style.transform = 'translateY(0)';
-      saveBtn.style.boxShadow = '0 4px 12px rgba(66, 133, 244, 0.25)';
-    };
-
-    // Focus input
-    setTimeout(() => input.focus(), 100);
-
-    // Handle save
-    saveBtn.addEventListener('click', () => {
-      const apiKey = input.value.trim();
-      modal.style.animation = 'fadeOut 0.2s ease-out';
-      setTimeout(() => {
-        modal.remove();
-        resolve(apiKey || null);
-      }, 150);
-    });
-
-    // Handle cancel
-    cancelBtn.addEventListener('click', () => {
-      modal.style.animation = 'fadeOut 0.2s ease-out';
-      setTimeout(() => {
-        modal.remove();
-        resolve(null);
-      }, 150);
-    });
-
-    // Handle Enter key
-    input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        const apiKey = input.value.trim();
-        modal.style.animation = 'fadeOut 0.2s ease-out';
-        setTimeout(() => {
-          modal.remove();
-          resolve(apiKey || null);
-        }, 150);
-      }
-    });
-
-    // Handle Escape key
-    modal.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        modal.style.animation = 'fadeOut 0.2s ease-out';
-        setTimeout(() => {
-          modal.remove();
-          resolve(null);
-        }, 150);
-      }
-    });
-  });
+  // Return null immediately - no popup for demo
+  return Promise.resolve(null);
 }
 
 /**
@@ -1883,12 +1981,7 @@ function showLanguageSelectionModal() {
       { code: 'auto', name: 'Auto-Detect', icon: '🌍', description: 'Read in original language (no translation)' },
       { code: 'tr', name: 'Türkçe', icon: '🇹🇷', description: 'Translate and read in Turkish' },
       { code: 'en', name: 'English', icon: '🇺🇸', description: 'Translate and read in English' },
-      { code: 'de', name: 'Deutsch', icon: '🇩🇪', description: 'Translate and read in German' },
-      { code: 'fr', name: 'Français', icon: '🇫🇷', description: 'Translate and read in French' },
-      { code: 'es', name: 'Español', icon: '🇪🇸', description: 'Translate and read in Spanish' },
-      { code: 'it', name: 'Italiano', icon: '🇮🇹', description: 'Translate and read in Italian' },
-      { code: 'ja', name: '日本語', icon: '🇯🇵', description: 'Translate and read in Japanese' },
-      { code: 'zh', name: '中文', icon: '🇨🇳', description: 'Translate and read in Chinese' }
+      { code: 'de', name: 'Deutsch', icon: '🇩🇪', description: 'Translate and read in German' }
     ];
 
     modal.innerHTML = `
@@ -2070,7 +2163,7 @@ function showAutoReadConfirmation(language) {
   confirmation.innerHTML = `
     <div style="display: flex; align-items: center; gap: 12px;">
       <span style="font-size: 24px;">🎧</span>
-      <div>
+      <div style="flex: 1;">
         <div style="font-weight: 600; color: #4CAF50; margin-bottom: 4px;">
           Auto Read Mode Enabled
         </div>
@@ -2078,6 +2171,18 @@ function showAutoReadConfirmation(language) {
           Language: ${languageNames[language]}
         </div>
       </div>
+      <button id="auto-read-stop-btn" style="
+        padding: 8px 16px;
+        background: rgba(255, 82, 82, 0.15);
+        border: 1px solid rgba(255, 82, 82, 0.3);
+        border-radius: 8px;
+        color: #ff5252;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+      ">Stop</button>
     </div>
   `;
 
@@ -2100,11 +2205,34 @@ function showAutoReadConfirmation(language) {
 
   document.body.appendChild(confirmation);
 
-  // Auto-remove after 3 seconds
-  setTimeout(() => {
+  // Stop button handler
+  const stopBtn = confirmation.querySelector('#auto-read-stop-btn');
+  stopBtn.onmouseover = () => {
+    stopBtn.style.background = 'rgba(255, 82, 82, 0.25)';
+    stopBtn.style.borderColor = '#ff5252';
+  };
+  stopBtn.onmouseout = () => {
+    stopBtn.style.background = 'rgba(255, 82, 82, 0.15)';
+    stopBtn.style.borderColor = 'rgba(255, 82, 82, 0.3)';
+  };
+  stopBtn.onclick = () => {
+    // Stop auto-read mode
+    window.postMessage({
+      type: 'REAREAD_AUTO_READ_MODE',
+      data: { enabled: false }
+    }, '*');
+
+    // Stop current speech (both browser TTS and ElevenLabs)
+    window.postMessage({
+      type: 'REAREAD_STOP_AUDIO'
+    }, '*');
+
     confirmation.style.animation = 'slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
     setTimeout(() => confirmation.remove(), 300);
-  }, 3000);
+  };
+
+  // Notification kalıcı - sadece Stop butonu ile kapanır
+  // Kullanıcı istediği zaman auto-read'i durdurabilmeli
 }
 
 /**
@@ -2295,93 +2423,8 @@ function requestTTSApiKeyFromUser() {
   });
 }
 
-// ============================================================================
-// GESTURE NAVIGATION: Handle gestures for help menu modal
-// ============================================================================
-
-let gestureMenuNavigation = {
-  enabled: false,
-  currentIndex: 0,
-  options: [],
-  menuElement: null
-};
-
-// Listen for gestures from content-script
-window.addEventListener('message', (event) => {
-  if (event.origin !== window.location.origin) return;
-
-  if (event.data.type === 'REAREAD_GESTURE') {
-    handleGestureInMenu(event.data.gesture);
-  }
-});
-
-function handleGestureInMenu(gesture) {
-  if (!gestureMenuNavigation.enabled || !gestureMenuNavigation.menuElement) {
-    return;
-  }
-
-  console.log('[GESTURE NAV] Gesture detected:', gesture);
-
-  // Handle different gestures
-  if (gesture.head_right) {
-    navigateMenuNext();
-  } else if (gesture.head_left) {
-    navigateMenuPrevious();
-  } else if (gesture.double_blink) {
-    selectCurrentMenuOption();
-  } else if (gesture.head_up) {
-    closeHelpMenu();
-  }
-}
-
-function navigateMenuNext() {
-  gestureMenuNavigation.currentIndex =
-    (gestureMenuNavigation.currentIndex + 1) % gestureMenuNavigation.options.length;
-  updateMenuSelection();
-  playBeep(400, 50);
-  console.log('[GESTURE NAV] Next option:', gestureMenuNavigation.currentIndex);
-}
-
-function navigateMenuPrevious() {
-  gestureMenuNavigation.currentIndex =
-    (gestureMenuNavigation.currentIndex - 1 + gestureMenuNavigation.options.length) % gestureMenuNavigation.options.length;
-  updateMenuSelection();
-  playBeep(400, 50);
-  console.log('[GESTURE NAV] Previous option:', gestureMenuNavigation.currentIndex);
-}
-
-function selectCurrentMenuOption() {
-  const selectedButton = gestureMenuNavigation.options[gestureMenuNavigation.currentIndex];
-  if (selectedButton) {
-    console.log('[GESTURE NAV] Selecting option');
-    playBeep(600, 100);
-    selectedButton.click();
-  }
-}
-
-function closeHelpMenu() {
-  const menu = document.getElementById('rearead-help-menu');
-  if (menu) {
-    console.log('[GESTURE NAV] Closing menu');
-    menu.style.animation = 'fadeOut 0.2s ease-out';
-    setTimeout(() => menu.remove(), 200);
-    gestureMenuNavigation.enabled = false;
-  }
-}
-
-function updateMenuSelection() {
-  gestureMenuNavigation.options.forEach((btn, index) => {
-    if (index === gestureMenuNavigation.currentIndex) {
-      btn.style.background = 'linear-gradient(135deg, rgba(255, 155, 69, 0.2), rgba(255, 155, 69, 0.1))';
-      btn.style.borderColor = '#FF9B45';
-      btn.style.transform = 'scale(1.02)';
-    } else {
-      btn.style.background = '#222';
-      btn.style.borderColor = '#333';
-      btn.style.transform = 'scale(1)';
-    }
-  });
-}
+// Note: Gesture navigation is handled by handleMenuGesture() function defined earlier
+// Duplicate functions removed - using existing implementation
 
 function playBeep(frequency = 440, duration = 100) {
   try {
@@ -2403,4 +2446,11 @@ function playBeep(frequency = 440, duration = 100) {
   } catch (e) {
     // Audio not supported
   }
+}
+
+// Expose requestHelp to window for easier access from content script
+// This allows the function to be called even if dynamic import fails
+if (typeof window !== 'undefined') {
+  window.reareadRequestHelp = requestHelp;
+  console.log('[LLM Helper] requestHelp function exposed to window');
 }

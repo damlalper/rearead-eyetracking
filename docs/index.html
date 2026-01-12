@@ -6,7 +6,9 @@
     <meta name="description" content="ReaRead - Webcam-based eye tracking for reading analysis. Understand how you read with AI-powered insights.">
     <meta name="keywords" content="eye tracking, reading analysis, browser extension, AI, education">
     <title>ReaRead - Eye-Tracking Reading Analysis</title>
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@700,600,500,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -41,8 +43,8 @@
                 Transform how you <span class="gradient-text">read and learn</span>
             </h1>
             <p class="hero-description">
-                Advanced webcam-based eye tracking meets AI. Understand your reading patterns,
-                identify difficult paragraphs, and get instant AI assistance—all without special hardware.
+                Webcam-based eye tracking meets AI. Hands-free gesture control, auto-read with translation,
+                Pomodoro focus mode, and gamification. Get instant AI help in 5 modes—all without special hardware.
             </p>
             <div class="hero-stats">
                 <div class="stat-item">
@@ -50,8 +52,12 @@
                     <div class="stat-label">Real-time tracking</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">468</div>
-                    <div class="stat-label">Facial landmarks</div>
+                    <div class="stat-number">95%+</div>
+                    <div class="stat-label">Gesture accuracy</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">5 Modes</div>
+                    <div class="stat-label">AI assistance</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number">Free</div>
@@ -142,7 +148,10 @@
                     <li>Automatic calibration in 20 seconds</li>
                     <li>Works on any webpage you visit</li>
                     <li>Free and open source</li>
-                    <li>AI-powered reading assistance</li>
+                    <li>5-mode AI assistance with Gemini 2.0</li>
+                    <li>Hands-free gesture control (blinks & head moves)</li>
+                    <li>Auto-read with 8-language translation</li>
+                    <li>Gamification with levels, XP, and badges</li>
                 </ul>
             </div>
         </div>
@@ -173,14 +182,11 @@
             <div class="feature-card">
                 <div class="feature-icon">
                     <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"></path>
-                        <path d="M8.5 8.5v.01"></path>
-                        <path d="M16 12v.01"></path>
-                        <path d="M12 16v.01"></path>
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     </svg>
                 </div>
-                <h3>AI Reading Assistant</h3>
-                <p>Struggling with a paragraph? Get instant summaries and simplifications powered by Llama 3.3 70B language model.</p>
+                <h3>5-Mode AI Assistant</h3>
+                <p>Gemini 2.0 Flash & Groq Llama 3.3 70B powered help: Summary, Vocabulary, Ask Questions, Key Points, and Audio Summary modes.</p>
             </div>
 
             <div class="feature-card">
@@ -263,6 +269,60 @@
                 <h3>Works Everywhere</h3>
                 <p>Chrome extension works on any webpage: articles, PDFs, research papers, documentation, and more.</p>
             </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <path d="M12 1v6"></path>
+                        <path d="M12 17v6"></path>
+                    </svg>
+                </div>
+                <h3>Hands-Free Gesture Control</h3>
+                <p>Navigate with double blinks and head movements. Perfect for accessibility. State-based blink detection with 95%+ accuracy.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </div>
+                <h3>Auto-Read Mode</h3>
+                <p>Automatic paragraph reading with dwell detection. Real-time translation to 8 languages. Text-to-speech with native accents.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 6v6l4 2"></path>
+                    </svg>
+                </div>
+                <h3>Focus Mode & Pomodoro</h3>
+                <p>Real-time distraction alerts when gaze goes out of bounds. Built-in Pomodoro timer (25 min work, 5 min break) with session tracking.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"></path>
+                    </svg>
+                </div>
+                <h3>Gamification System</h3>
+                <p>Level up (1-10), earn XP points, unlock badges, and build reading streaks. 90-day activity heatmap and personalized insights.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3v18h18"></path>
+                        <path d="M18 17V9M13 17V5M8 17v-3"></path>
+                    </svg>
+                </div>
+                <h3>Analytics Dashboard</h3>
+                <p>Comprehensive reading metrics: Focus scores, reading speed trends, LLM usage charts, difficulty cloud, and streak tracking with Chart.js visualizations.</p>
+            </div>
         </div>
     </section>
 
@@ -336,8 +396,8 @@
                     </svg>
                 </div>
                 <div class="use-case-content">
-                    <h3>Accessibility</h3>
-                    <p>Helpful for users with reading difficulties. Visual tracking helps maintain focus. AI assistance breaks down complex text.</p>
+                    <h3>Motor-Impaired Users</h3>
+                    <p>Fully hands-free operation with gesture control. Double blink to trigger help, head movements to navigate. Auto-read mode with text-to-speech.</p>
                 </div>
             </div>
 
@@ -427,12 +487,28 @@
                 <div class="tech-desc">Fixation detection</div>
             </div>
             <div class="tech-item">
+                <div class="tech-label">Gemini 2.0 Flash</div>
+                <div class="tech-desc">Primary AI assistant</div>
+            </div>
+            <div class="tech-item">
                 <div class="tech-label">Llama 3.3 70B</div>
-                <div class="tech-desc">AI text assistance</div>
+                <div class="tech-desc">Fallback AI via Groq</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-label">Web Speech API</div>
+                <div class="tech-desc">Text-to-speech synthesis</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-label">MyMemory API</div>
+                <div class="tech-desc">Free translation (8 languages)</div>
+            </div>
+            <div class="tech-item">
+                <div class="tech-label">Chart.js</div>
+                <div class="tech-desc">Analytics visualizations</div>
             </div>
             <div class="tech-item">
                 <div class="tech-label">WebSocket</div>
-                <div class="tech-desc">Real-time streaming</div>
+                <div class="tech-desc">Real-time gaze streaming</div>
             </div>
             <div class="tech-item">
                 <div class="tech-label">Python + OpenCV</div>
@@ -486,6 +562,24 @@
                 <div class="comparison-cell">Real-time Analytics</div>
                 <div class="comparison-cell">
                     <svg class="icon-svg-small check-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small check-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Hands-Free Control</div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small x-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small check-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+            </div>
+            <div class="comparison-row">
+                <div class="comparison-cell">Translation & TTS</div>
+                <div class="comparison-cell">
+                    <svg class="icon-svg-small x-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </div>
                 <div class="comparison-cell">
                     <svg class="icon-svg-small check-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>

@@ -39,7 +39,7 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    font-family: 'Clash Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg-dark);
     color: var(--text-primary);
     line-height: 1.6;
@@ -95,6 +95,19 @@ body {
     }
     50% {
         opacity: 0.4;
+    }
+}
+
+@keyframes blurToSharp {
+    from {
+        filter: blur(10px);
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        filter: blur(0);
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
@@ -268,8 +281,9 @@ h1 {
 }
 
 .hero-stats {
-    display: flex;
-    gap: 32px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
     margin-bottom: 40px;
     animation: fadeInUp 1.1s ease-out 0.5s both;
 }
@@ -1083,7 +1097,7 @@ footer {
     }
 
     .hero-stats {
-        flex-direction: column;
+        grid-template-columns: repeat(2, 1fr);
         gap: 16px;
     }
     

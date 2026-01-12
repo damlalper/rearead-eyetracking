@@ -10,8 +10,28 @@ const WS_URL = 'ws://localhost:8765';
 let connectionStatus = 'disconnected'; // 'connecting', 'connected', 'disconnected'
 
 // Initialize on install
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
   console.log('ReaRead extension installed');
+
+  // Load API keys from config.js (demo mode)
+  try {
+    const response = await fetch(chrome.runtime.getURL('config.js'));
+    const configText = await response.text();
+
+    // Extract API keys using regex (simple parsing)
+    const elevenlabsMatch = configText.match(/ELEVENLABS_API_KEY:\s*["']([^"']+)["']/);
+    const groqMatch = configText.match(/GROQ_API_KEY:\s*["']([^"']+)["']/);
+
+    chrome.storage.local.set({
+      elevenlabsApiKey: elevenlabsMatch ? elevenlabsMatch[1] : '',
+      groqApiKey: groqMatch ? groqMatch[1] : ''
+    });
+
+    console.log('[API KEYS] API keys loaded from config.js for demo');
+  } catch (error) {
+    console.error('[API KEYS] Failed to load config.js:', error);
+  }
+
   connectToCompanion();
 });
 

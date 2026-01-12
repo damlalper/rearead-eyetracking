@@ -45,8 +45,12 @@
 
   "web_accessible_resources": [
     {
-      "resources": ["content/gaze-cursor.png", "content/llm-helper.js"],
+      "resources": ["content/gaze-cursor.png", "content/llm-helper.js", "config.js"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' https://cdn.jsdelivr.net; object-src 'self'"
+  }
 }
