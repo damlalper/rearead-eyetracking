@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "date": "2026-03-01T09:30:33.615Z",
+    "screen": "1920x869",
+    "method": "WebGazer.js (TFFacemesh + Ridge regression)",
+    "calibration": "9-point, 3 clicks/point",
+    "test_points": 9,
+    "dwell_ms_per_point": 2000,
+    "valid_points": 0
+  },
+  "aggregate": {
+    "mean_error_px": null,
+    "std_error_px": null,
+    "mean_error_deg": "NaN",
+    "p50_deg": "NaN",
+    "p90_deg": "NaN"
+  },
+  "per_point": [
+    {
+      "point": 1,
+      "target": {
+        "x": 200,
+        "y": 160
+      },
+      "predicted": null,
+      "error": null,
+      "std": null,
+      "samples": 0,
+      "note": "No gaze data"
+    },
+    {
+      "point": 2,
+      "target": {
+        "x": 880,
+        "y": 140
+      },
+      "predicted": null,
+      "error": null,
+      "std": null,
+      "samples": 0,
+      "note": "No gaze data"
+    },
+    {
+      "point": 3,
+      "target": {
+        "x": 1740,
+        "y": 170
+      },
+      "predicted": null,
+      "error": null,
+      "std": null,
+      "samples": 0,
+      "note": "No gaze data"
+    },
+    {
+      "point": 4,
+      "target": {
+        "x": 170,
+        "y": 374.5
+      },
+      "predicted": null,
+      "error": null,
+      "std": null,
+      "samples": 0,
+      "note": "No gaze data"
+    },
+    {
+      "point": 5,
+      "target": {
+        "x": 1030,
+        "y": 484.5
+      },
+      "predicted": null,
+      "error": null,
+      "std": null,
+      "samples": 0,
+      "note": "No gaze data"
+    },
+    {
+      "point": 6,
+      "target": {
+        "x": 1760,
+        "y": 364.5
+      },
+      "predicted": null,
+      "error": null,
+      "std": null,
+      "samples": 0,
+      "note": "No gaze data"
+    },
+    {
+      "point": 7,
+      "target": {
+        "x": 190,
+        "y": 709
+      },
+      "predicted": null,
+      "error": null,
+      "std": null,
+      "samples": 0,
+      "note": "No gaze data"
+    },
+    {
+      "point": 8,
+      "target": {
+        "x": 900,
+        "y": 699
+      },
+      "predicted": null,
+      "error": null,
+      "std": null,
+      "samples": 0,
+      "note": "No gaze data"
+    },
+    {
+      "point": 9,
+      "target": {
+        "x": 1750,
+        "y": 719
+      },
+      "predicted": null,
+      "error": null,
+      "std": null,
+      "samples": 0,
+      "note": "No gaze data"
+    }
+  ]
+}

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WebGazer Accuracy Test</title>
+<!-- WebGazer from reliable CDN -->
+<script src="https://cdn.jsdelivr.net/npm/webgazer@2.1.0/dist/webgazer.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#111; color:#eee; font-family:'Segoe UI',sans-serif; overflow:hidden; width:100vw; height:100vh; user-select:none; }
+
+#log {
+  position:fixed; bottom:8px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,0.75); color:#7ec8e3; padding:8px 22px;
+  border-radius:16px; font-size:14px; z-index:9999; pointer-events:none;
+  max-width:80vw; text-align:center;
+}
+#progress { position:fixed; top:0; left:0; height:4px; background:#7ec8e3; width:0%; z-index:9999; transition:width 0.3s; }
+#phase { position:fixed; top:10px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,0.6); color:#aaa; padding:5px 16px; border-radius:10px; font-size:13px; z-index:9999; }
+
+/* Overlay screens */
+.screen { position:fixed; top:0; left:0; width:100vw; height:100vh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:16px; z-index:1000; }
+.screen h1 { font-size:26px; color:#7ec8e3; }
+.screen p  { font-size:15px; color:#ccc; max-width:500px; text-align:center; line-height:1.65; }
+.btn { padding:13px 34px; background:#7ec8e3; color:#111; border:none; border-radius:8px;
+  font-size:17px; font-weight:700; cursor:pointer; }
+.btn:hover { background:#5ab4cf; }
+.btn.green { background:#44ee88; }
+.hidden { display:none !important; }
+
+/* Calibration dot */
+#calib-dot {
+  position:fixed; width:24px; height:24px; background:#ff4444; border:3px solid #fff;
+  border-radius:50%; transform:translate(-50%,-50%); cursor:pointer; z-index:800;
+  box-shadow:0 0 14px rgba(255,68,68,0.8);
+  display:none;
+}
+#calib-dot.lit { background:#44ee88; transform:translate(-50%,-50%) scale(1.25); }
+
+/* Test target */
+#test-dot {
+  position:fixed; width:28px; height:28px; background:#ffdd00; border:3px solid #fff;
+  border-radius:50%; transform:translate(-50%,-50%); z-index:800;
+  box-shadow:0 0 18px rgba(255,221,0,0.9);
+  display:none; animation:pulse 0.7s ease-in-out infinite alternate;
+}
+@keyframes pulse { from{box-shadow:0 0 8px rgba(255,221,0,0.5);}to{box-shadow:0 0 26px rgba(255,221,0,1);} }
+
+/* Gaze preview dot */
+#gaze-preview {
+  position:fixed; width:12px; height:12px; background:rgba(126,200,227,0.65);
+  border-radius:50%; transform:translate(-50%,-50%); pointer-events:none; z-index:700;
+  display:none;
+}
+
+/* Results */
+#results-box {
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  background:#1a1a2e; border:2px solid #7ec8e3; border-radius:14px;
+  padding:28px 36px; z-index:2000; display:none; min-width:420px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.8);
+}
+#results-box h2 { color:#7ec8e3; margin-bottom:12px; }
+table { width:100%; border-collapse:collapse; margin:8px 0; }
+td,th { padding:7px 10px; text-align:left; border-bottom:1px solid #2a2a4a; font-size:13px; }
+th { color:#888; }
+.hl { color:#ffdd00; font-weight:700; }
+#json-area { margin-top:10px; background:#0a0a18; padding:10px; border-radius:6px;
+  font-size:11px; color:#88ee88; white-space:pre-wrap; max-height:140px;
+  overflow-y:auto; font-family:monospace; }
+
+/* Click counter badge */
+#click-badge {
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-size:48px; font-weight:900; color:#fff; opacity:0; z-index:999;
+  pointer-events:none; text-shadow:0 0 20px #7ec8e3;
+  transition:opacity 0.1s;
+}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<div id="phase"></div>
+<div id="log">Yükleniyor...</div>
+<div id="calib-dot" id="calib-dot"></div>
+<div id="test-dot"></div>
+<div id="gaze-preview"></div>
+<div id="click-badge"></div>
+
+<!-- Screen 1: Intro -->
+<div class="screen" id="screen-intro">
+  <h1>WebGazer.js Accuracy Test</h1>
+  <p>
+    Bu test WebGazer.js'in göz takip doğruluğunu ölçer ve ReaRead ile karşılaştırır.<br><br>
+    <strong>Aşama 1:</strong> 9 kalibrasyona noktasına <strong>her birine 5 kez</strong> tıkla.<br>
+    <strong>Aşama 2:</strong> 9 test noktasına <strong>2 saniye bak</strong> (tıklama yok).<br><br>
+    Monitöre yaklaşık 60 cm uzakta, dik otur. Başını sabit tut.
+  </p>
+  <button class="btn" id="btn-init">Kamerayı Başlat →</button>
+</div>
+
+<!-- Screen 2: Waiting for WebGazer -->
+<div class="screen hidden" id="screen-wait">
+  <h1>Kamera Bağlanıyor...</h1>
+  <p>Tarayıcı kamera izni isteyecek — <strong>İzin Ver</strong>'e tıkla.<br>
+  Yüzün kamera önizlemesinde görününce hazır olacak.</p>
+  <button class="btn hidden" id="btn-start-calib">Kalibrasyona Geç →</button>
+</div>
+
+<!-- Screen 3: Results -->
+<div id="results-box">
+  <h2>📊 WebGazer Test Sonuçları</h2>
+  <table id="results-table"></table>
+  <div id="json-area"></div>
+  <div style="display:flex;gap:10px;margin-top:14px;">
+    <button class="btn green" onclick="downloadJSON()">⬇ JSON İndir</button>
+    <button class="btn" onclick="location.reload()">↺ Tekrar</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const SW = window.innerWidth, SH = window.innerHeight;
+const M  = 80; // margin
+
+// 9-point calibration grid
+const CALIB_PTS = [
+  [M,      M      ], [SW/2,  M      ], [SW-M,  M      ],
+  [M,      SH/2   ], [SW/2,  SH/2   ], [SW-M,  SH/2   ],
+  [M,      SH-M   ], [SW/2,  SH-M   ], [SW-M,  SH-M   ],
+];
+
+// Test points: different from calibration (shifted ~80-120px)
+const TEST_PTS = [
+  [M+120,      M+80       ], [SW/2-80,   M+60       ], [SW-M-100, M+90       ],
+  [M+90,       SH/2-60    ], [SW/2+70,   SH/2+50    ], [SW-M-80,  SH/2-70   ],
+  [M+110,      SH-M-80    ], [SW/2-60,   SH-M-90    ], [SW-M-90,  SH-M-70   ],
+];
+
+const CLICKS_PER_PT  = 5;    // more clicks = better calibration
+const TEST_DWELL_MS  = 2000; // ms to sample gaze at each test point
+const SAMPLE_MS      = 50;   // gaze sample interval during test
+
+// ============================================================
+// STATE
+// ============================================================
+let gazeX = 0, gazeY = 0, gazeReady = false;
+let calibIdx = 0, clickCount = 0;
+let testIdx = 0;
+let gazeBuffer = [];
+let allResults = [];
+let sampleInterval = null, dwellTimeout = null;
+let wgStarted = false;
+
+// ============================================================
+// DOM REFS
+// ============================================================
+const calibDot    = document.getElementById('calib-dot');
+const testDot     = document.getElementById('test-dot');
+const gazePrev    = document.getElementById('gaze-preview');
+const logEl       = document.getElementById('log');
+const progressEl  = document.getElementById('progress');
+const phaseEl     = document.getElementById('phase');
+const clickBadge  = document.getElementById('click-badge');
+
+function log(msg)      { logEl.textContent = msg; }
+function setPhase(msg) { phaseEl.textContent = msg; }
+function setProgress(p){ progressEl.style.width = p + '%'; }
+
+// ============================================================
+// INIT: Start WebGazer
+// ============================================================
+document.getElementById('btn-init').onclick = async () => {
+  document.getElementById('screen-intro').classList.add('hidden');
+  document.getElementById('screen-wait').classList.remove('hidden');
+  log('WebGazer başlatılıyor...');
+
+  try {
+    await webgazer
+      .setRegression('ridge')
+      .setTracker('TFFacemesh')
+      .setGazeListener((data, ts) => {
+        if (!data) return;
+        gazeX = data.x;
+        gazeY = data.y;
+        gazeReady = true;
+        gazePrev.style.left = gazeX + 'px';
+        gazePrev.style.top  = gazeY + 'px';
+      })
+      .begin();
+
+    webgazer.showVideoPreview(true).showPredictionPoints(false);
+
+    // Shrink video to top-left corner
+    await waitMs(1500);
+    styleVideoPreview();
+
+    gazePrev.style.display = 'block';
+    log('WebGazer hazır — yüzün görüntüde mi?');
+    document.getElementById('btn-start-calib').classList.remove('hidden');
+    wgStarted = true;
+
+  } catch(e) {
+    log('HATA: ' + e.message);
+    console.error(e);
+  }
+};
+
+document.getElementById('btn-start-calib').onclick = () => {
+  document.getElementById('screen-wait').classList.add('hidden');
+  startCalibration();
+};
+
+function styleVideoPreview() {
+  // Shrink video, and crucially: pointer-events:none on ALL WebGazer elements
+  // so they don't block our click handlers
+  const allWG = document.querySelectorAll(
+    '#webgazerVideoContainer, #webgazerVideoFeed, #webgazerFaceOverlay, ' +
+    '#webgazerFaceFeedbackBox, canvas[id^="webgazer"], .webgazerVideoContainer'
+  );
+  allWG.forEach(el => {
+    el.style.pointerEvents = 'none';
+  });
+
+  const container = document.querySelector('#webgazerVideoContainer');
+  if (container) {
+    container.style.cssText = 'position:fixed!important;top:6px!important;left:6px!important;' +
+      'width:140px!important;height:105px!important;z-index:500!important;' +
+      'opacity:0.6!important;border-radius:6px!important;pointer-events:none!important;';
+  }
+}
+
+// ============================================================
+// CALIBRATION
+// ============================================================
+function startCalibration() {
+  setPhase('Aşama 1/2 — Kalibrasyon: kırmızı noktaya tıkla');
+  calibIdx = 0; clickCount = 0;
+  showCalibPoint();
+}
+
+function showCalibPoint() {
+  if (calibIdx >= CALIB_PTS.length) { startTesting(); return; }
+
+  const [x, y] = CALIB_PTS[calibIdx];
+  calibDot.style.left    = x + 'px';
+  calibDot.style.top     = y + 'px';
+  calibDot.style.display = 'block';
+  calibDot.classList.remove('lit');
+
+  const remaining = CLICKS_PER_PT - clickCount;
+  log(`Nokta ${calibIdx+1}/9 — ${remaining} kez tıkla`);
+  setProgress(((calibIdx * CLICKS_PER_PT + clickCount) / (CALIB_PTS.length * CLICKS_PER_PT)) * 50);
+}
+
+// Document-level click handler — works even if WebGazer overlays block the dot
+document.addEventListener('click', (e) => {
+  if (calibDot.style.display === 'none') return; // not in calibration phase
+
+  const [x, y] = CALIB_PTS[calibIdx];
+  const dx = e.clientX - x, dy = e.clientY - y;
+  const dist = Math.hypot(dx, dy);
+  if (dist > 60) return; // only accept clicks within 60px of dot center
+
+  // Flash effect
+  calibDot.classList.add('lit');
+  setTimeout(() => calibDot.classList.remove('lit'), 180);
+
+  // Flash badge
+  flashBadge(CLICKS_PER_PT - clickCount - 1);
+
+  clickCount++;
+  setProgress(((calibIdx * CLICKS_PER_PT + clickCount) / (CALIB_PTS.length * CLICKS_PER_PT)) * 50);
+
+  if (clickCount >= CLICKS_PER_PT) {
+    clickCount = 0;
+    calibIdx++;
+    calibDot.style.display = 'none';
+    setTimeout(showCalibPoint, 300);
+  } else {
+    log(`Nokta ${calibIdx+1}/9 — ${CLICKS_PER_PT - clickCount} kez daha tıkla`);
+  }
+});
+
+function flashBadge(remaining) {
+  clickBadge.textContent = remaining > 0 ? remaining : '✓';
+  clickBadge.style.opacity = '1';
+  setTimeout(() => { clickBadge.style.opacity = '0'; }, 350);
+}
+
+// ============================================================
+// TESTING
+// ============================================================
+function startTesting() {
+  calibDot.style.display = 'none';
+  setPhase('Aşama 2/2 — Test: sarı noktaya BAK (tıklama yok)');
+  log('Test başlıyor — sarı noktaya bakın...');
+  testIdx = 0; allResults = [];
+  setTimeout(() => showTestPoint(), 1200);
+}
+
+function showTestPoint() {
+  if (testIdx >= TEST_PTS.length) { finishTest(); return; }
+
+  const [tx, ty] = TEST_PTS[testIdx];
+  testDot.style.left    = tx + 'px';
+  testDot.style.top     = ty + 'px';
+  testDot.style.display = 'block';
+
+  gazeBuffer = [];
+  log(`Test noktası ${testIdx+1}/9 — bakın... (${TEST_DWELL_MS/1000}s)`);
+  setProgress(50 + ((testIdx / TEST_PTS.length) * 50));
+
+  // Collect gaze samples
+  sampleInterval = setInterval(() => {
+    if (gazeReady) gazeBuffer.push({ x: gazeX, y: gazeY });
+  }, SAMPLE_MS);
+
+  dwellTimeout = setTimeout(() => {
+    clearInterval(sampleInterval);
+    testDot.style.display = 'none';
+    recordResult(testIdx, tx, ty);
+    testIdx++;
+    setTimeout(showTestPoint, 500);
+  }, TEST_DWELL_MS);
+}
+
+function recordResult(idx, tx, ty) {
+  if (gazeBuffer.length === 0) {
+    allResults.push({ point: idx+1, target:{x:tx,y:ty}, predicted:null, error:null, std:null, samples:0, note:'No gaze data' });
+    return;
+  }
+  const n   = gazeBuffer.length;
+  const mX  = gazeBuffer.reduce((s,p)=>s+p.x,0) / n;
+  const mY  = gazeBuffer.reduce((s,p)=>s+p.y,0) / n;
+  const sdX = Math.sqrt(gazeBuffer.reduce((s,p)=>s+(p.x-mX)**2,0)/n);
+  const sdY = Math.sqrt(gazeBuffer.reduce((s,p)=>s+(p.y-mY)**2,0)/n);
+  const eX  = mX - tx, eY = mY - ty;
+  const euc = Math.hypot(eX, eY);
+  allResults.push({
+    point: idx+1,
+    target:    { x:tx, y:ty },
+    predicted: { x:Math.round(mX), y:Math.round(mY) },
+    error:     { x:Math.round(eX), y:Math.round(eY), euclidean:Math.round(euc) },
+    std:       { x:Math.round(sdX), y:Math.round(sdY) },
+    samples: n,
+  });
+}
+
+// ============================================================
+// FINISH & RESULTS
+// ============================================================
+function finishTest() {
+  setProgress(100);
+  log('Test tamamlandı ✓');
+  setPhase('');
+
+  const valid  = allResults.filter(r => r.error);
+  const errors = valid.map(r => r.error.euclidean);
+
+  let agg = {};
+  if (errors.length > 0) {
+    const mean   = errors.reduce((s,e)=>s+e,0) / errors.length;
+    const stdev  = Math.sqrt(errors.reduce((s,e)=>s+(e-mean)**2,0)/errors.length);
+    const sorted = [...errors].sort((a,b)=>a-b);
+    const p50    = sorted[Math.floor(sorted.length * 0.5)];
+    const p90    = sorted[Math.floor(sorted.length * 0.9)] ?? sorted[sorted.length-1];
+    const PPD    = 33; // px per degree at 60cm
+    agg = {
+      mean_error_px:  Math.round(mean),
+      std_error_px:   Math.round(stdev),
+      p50_px: p50, p90_px: p90,
+      mean_error_deg: (mean/PPD).toFixed(2),
+      p50_deg:        (p50/PPD).toFixed(2),
+      p90_deg:        (p90/PPD).toFixed(2),
+    };
+  } else {
+    agg = { error: 'No valid data points — WebGazer did not return gaze during test phase.' };
+  }
+
+  const results = {
+    meta: {
+      date: new Date().toISOString(),
+      screen: `${SW}x${SH}`,
+      method: 'WebGazer.js (TFFacemesh + Ridge regression)',
+      calibration: `9-point, ${CLICKS_PER_PT} clicks/point`,
+      test_points: TEST_PTS.length,
+      dwell_ms_per_point: TEST_DWELL_MS,
+      valid_points: valid.length,
+    },
+    aggregate: agg,
+    per_point: allResults,
+  };
+
+  localStorage.setItem('webgazer_test_results', JSON.stringify(results));
+  globalThis._resultsObj = results;
+  showResults(results);
+}
+
+function showResults(r) {
+  const agg = r.aggregate;
+  const tbl = document.getElementById('results-table');
+
+  if (agg.error) {
+    tbl.innerHTML = `<tr><td colspan="2" style="color:#ff6666">${agg.error}</td></tr>`;
+  } else {
+    tbl.innerHTML = `
+      <tr><th>Metrik</th><th>Değer</th></tr>
+      <tr><td>Yöntem</td><td>${r.meta.method}</td></tr>
+      <tr><td>Ekran</td><td>${r.meta.screen}</td></tr>
+      <tr><td>Geçerli test noktaları</td><td>${r.meta.valid_points} / ${r.meta.test_points}</td></tr>
+      <tr><td class="hl">Mean hata</td><td class="hl">${agg.mean_error_px} px &nbsp;(${agg.mean_error_deg}°)</td></tr>
+      <tr><td class="hl">Std sapma</td><td class="hl">${agg.std_error_px} px</td></tr>
+      <tr><td class="hl">p50 hata</td><td class="hl">${agg.p50_px} px &nbsp;(${agg.p50_deg}°)</td></tr>
+      <tr><td class="hl">p90 hata</td><td class="hl">${agg.p90_px} px &nbsp;(${agg.p90_deg}°)</td></tr>
+    `;
+  }
+
+  document.getElementById('json-area').textContent = JSON.stringify(r, null, 2);
+  document.getElementById('results-box').style.display = 'block';
+}
+
+function downloadJSON() {
+  const r = globalThis._resultsObj;
+  if (!r) return;
+  const blob = new Blob([JSON.stringify(r, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'webgazer_accuracy_results.json';
+  a.click();
+}
+
+// ============================================================
+// UTIL
+// ============================================================
+function waitMs(ms) { return new Promise(res => setTimeout(res, ms)); }
+
+// Keep all WebGazer-injected elements non-blocking
+const wgObserver = new MutationObserver(() => {
+  document.querySelectorAll(
+    'canvas, #webgazerVideoContainer, #webgazerVideoFeed, ' +
+    '#webgazerFaceOverlay, #webgazerFaceFeedbackBox'
+  ).forEach(el => {
+    if (el.id && el.id.startsWith('webgazer') || el.tagName === 'CANVAS') {
+      el.style.pointerEvents = 'none';
+    }
+  });
+});
+wgObserver.observe(document.body, { childList: true, subtree: true });
+</script>
+</body>
+</html>

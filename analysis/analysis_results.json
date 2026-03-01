@@ -1,0 +1,1572 @@
+{
+  "total_sessions": 412,
+  "meaningful_sessions": 12,
+  "total_paragraphs": 157,
+  "total_words": 0,
+  "total_dwell_time_ms": 2986135,
+  "avg_wpm": 0.0,
+  "focus_scores": [
+    95.65217391304348,
+    95.65217391304348,
+    81.12582781456953,
+    86.57718120805369,
+    89.41605839416059,
+    70.96774193548387,
+    91.37931034482759,
+    63.32179930795848,
+    32.304038004750595,
+    20.76502732240437,
+    36.507936507936506,
+    94.96644295302013
+  ],
+  "difficulty_ratios": [
+    8.316666666666668,
+    10.02,
+    15.951666666666666,
+    15.441666666666668,
+    13.615000000000002,
+    2.5933333333333337,
+    7.066666666666667,
+    0.4166666666666667,
+    0.3373333333333333,
+    37.955,
+    7.496666666666667,
+    16.633333333333336,
+    12.926666666666668,
+    0.8466666666666667,
+    2.9183333333333334,
+    16.326666666666668,
+    25.136666666666667,
+    8.756666666666666,
+    40.82666666666667,
+    12.510000000000002,
+    5.87,
+    4.998333333333334,
+    4.101666666666667,
+    4.45,
+    16.636666666666667,
+    2.1679999999999997,
+    2.273636363636364,
+    1.1750980392156865,
+    29.45111111111111,
+    0.8450000000000001,
+    0.41333333333333333,
+    0.8300000000000001,
+    5.006666666666667,
+    0.8283333333333334,
+    1.6600000000000001,
+    3.1158333333333332,
+    1.669166666666667,
+    2.2257777777777776,
+    0.5599999999999999,
+    1.38,
+    8.356666666666667,
+    9.327333333333334,
+    1.25,
+    1.6600000000000001,
+    34.21666666666667,
+    48.333333333333336,
+    0.5522222222222222,
+    0.3759259259259259,
+    0.41500000000000004,
+    30.415,
+    0.8402380952380952,
+    0.8766666666666667,
+    3.3366666666666664,
+    0.42000000000000004,
+    3.9886666666666666,
+    0.8333333333333334,
+    2.23,
+    1.6616666666666666,
+    17.893333333333334,
+    16.228333333333335,
+    43.32666666666667,
+    18.333333333333336,
+    1.6300000000000001,
+    2.49,
+    3.3366666666666664,
+    0.8400000000000001,
+    1.0694444444444444,
+    0.41833333333333333,
+    0.6408333333333334,
+    0.3983333333333333,
+    2.314074074074074,
+    10.839166666666667,
+    5.846666666666667,
+    3.29,
+    1.235,
+    14.18,
+    50.00666666666667,
+    2.6270175438596493,
+    1.6655555555555557,
+    0.8200000000000001,
+    4.996666666666667,
+    1.2683333333333333,
+    2.8907843137254905,
+    10.896666666666668,
+    9.085714285714285,
+    14.126666666666669,
+    4.590833333333334,
+    4.17,
+    0.40166666666666667,
+    0.8316666666666667,
+    1.2650000000000001,
+    0.8373333333333334,
+    0.8333333333333334,
+    3.2866666666666666,
+    1.2416666666666667,
+    0.8133333333333334,
+    1.7133333333333334,
+    0.20500000000000002,
+    2.4883333333333337,
+    1.5172727272727273,
+    2.5100000000000002,
+    6.046862745098039,
+    5.682727272727273,
+    2.217777777777778,
+    0.916,
+    16.62851851851852,
+    1.5787719298245615,
+    1.8096296296296295,
+    8.333333333333334,
+    2.458888888888889,
+    1.5139393939393941,
+    1.8631372549019611,
+    2.5925925925925926,
+    3.7127272727272733,
+    3.6506349206349205,
+    1.170175438596491,
+    0.3841025641025641,
+    0.1709090909090909,
+    2.4521568627450985,
+    0.8377777777777778,
+    20.286349206349207,
+    0.11658914728682171,
+    0.6854545454545455,
+    2.1544444444444446,
+    0.6232567049808428,
+    201.16866666666667,
+    8.138666666666667,
+    27.223333333333333,
+    15.668,
+    1.6944791666666668,
+    0.6572619047619047,
+    15.394583333333332,
+    1.0931944444444446,
+    0.01826388888888889,
+    9.0384375,
+    17.859583333333333,
+    7.188472222222222,
+    2.2919444444444443,
+    0.07027777777777777,
+    17.74159722222222,
+    13.02173611111111,
+    13.5390625,
+    13.726919191919192,
+    3.6805555555555554,
+    0.4839333333333334,
+    1.3753030303030302,
+    0.7810416666666666,
+    0.05106666666666667
+  ],
+  "dwell_times": [
+    2495,
+    5759,
+    6012,
+    9571,
+    7510,
+    8169,
+    1556,
+    4240,
+    250,
+    506,
+    22773,
+    2249,
+    4990,
+    7756,
+    254,
+    1751,
+    14694,
+    37705,
+    5254,
+    248,
+    12248,
+    120014,
+    7506,
+    1761,
+    2999,
+    2461,
+    9744,
+    4991,
+    6504,
+    7503,
+    5993,
+    26506,
+    507,
+    248,
+    249,
+    3004,
+    497,
+    996,
+    3739,
+    2003,
+    10016,
+    504,
+    1242,
+    2507,
+    13991,
+    750,
+    996,
+    10265,
+    29000,
+    497,
+    1015,
+    249,
+    18249,
+    3529,
+    263,
+    1001,
+    252,
+    5983,
+    250,
+    2007,
+    997,
+    10736,
+    9737,
+    12998,
+    5500,
+    489,
+    747,
+    1001,
+    504,
+    5775,
+    251,
+    769,
+    239,
+    6248,
+    13007,
+    1754,
+    987,
+    741,
+    8508,
+    15002,
+    14974,
+    1499,
+    246,
+    1499,
+    761,
+    14743,
+    3269,
+    9576,
+    4238,
+    5509,
+    1251,
+    241,
+    499,
+    759,
+    1256,
+    500,
+    986,
+    745,
+    244,
+    514,
+    246,
+    1493,
+    5007,
+    753,
+    255,
+    30839,
+    18753,
+    1996,
+    2748,
+    44897,
+    8999,
+    9772,
+    37500,
+    15491,
+    4996,
+    9502,
+    14000,
+    12252,
+    22999,
+    6670,
+    2996,
+    2256,
+    25012,
+    754,
+    39001,
+    1504,
+    22620,
+    25207,
+    16267,
+    303985,
+    27696,
+    42317,
+    18500,
+    17000,
+    67246,
+    38757,
+    15991,
+    2253,
+    1013,
+    753,
+    256,
+    89335,
+    257411,
+    103748,
+    32989,
+    1257,
+    286049,
+    145766,
+    134698,
+    1247,
+    1749,
+    273033,
+    61498,
+    7499,
+    27477,
+    15245,
+    1502
+  ],
+  "revisits": [
+    1,
+    2,
+    3,
+    5,
+    2,
+    5,
+    1,
+    2,
+    1,
+    2,
+    17,
+    1,
+    5,
+    2,
+    1,
+    1,
+    25,
+    11,
+    3,
+    1,
+    4,
+    1,
+    2,
+    2,
+    1,
+    6,
+    5,
+    3,
+    3,
+    9,
+    3,
+    12,
+    2,
+    1,
+    1,
+    1,
+    2,
+    1,
+    1,
+    4,
+    7,
+    2,
+    4,
+    2,
+    9,
+    1,
+    2,
+    8,
+    11,
+    2,
+    2,
+    1,
+    7,
+    8,
+    1,
+    1,
+    1,
+    7,
+    1,
+    5,
+    2,
+    3,
+    8,
+    1,
+    4,
+    1,
+    3,
+    1,
+    1,
+    4,
+    1,
+    2,
+    1,
+    4,
+    2,
+    4,
+    1,
+    2,
+    2,
+    4,
+    5,
+    2,
+    1,
+    3,
+    1,
+    11,
+    5,
+    6,
+    1,
+    4,
+    3,
+    1,
+    2,
+    1,
+    1,
+    1,
+    3,
+    1,
+    1,
+    2,
+    1,
+    2,
+    9,
+    2,
+    1,
+    11,
+    12,
+    1,
+    3,
+    4,
+    2,
+    13,
+    2,
+    6,
+    1,
+    5,
+    7,
+    7,
+    10,
+    6,
+    4,
+    3,
+    20,
+    1,
+    11,
+    1,
+    8,
+    21,
+    8,
+    9,
+    3,
+    3,
+    2,
+    12,
+    4,
+    4,
+    8,
+    1,
+    1,
+    2,
+    1,
+    16,
+    18,
+    17,
+    3,
+    5,
+    10,
+    8,
+    9,
+    1,
+    1,
+    58,
+    35,
+    3,
+    31,
+    5,
+    3
+  ],
+  "llm_modes": {
+    "auto_read": 18,
+    "zoom": 3,
+    "vocabulary": 3,
+    "summary": 18,
+    "audio": 2,
+    "ask_question": 3,
+    "keypoints": 2
+  },
+  "llm_used_paragraphs": 11,
+  "total_llm_usage": 49,
+  "paragraphs_per_session": [
+    21,
+    1,
+    41,
+    41,
+    11,
+    5,
+    9,
+    4,
+    7,
+    6,
+    5,
+    6
+  ],
+  "difficult_paragraphs_per_session": [
+    16,
+    0,
+    26,
+    24,
+    7,
+    4,
+    3,
+    4,
+    2,
+    4,
+    3,
+    2
+  ],
+  "difficulty_distribution": {
+    "easy": 48,
+    "medium": 5,
+    "hard": 95
+  },
+  "dwell_difficulty_pairs": [
+    {
+      "dwell_time": 2495,
+      "difficulty_ratio": 8.316666666666668,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 6012,
+      "difficulty_ratio": 10.02,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 9571,
+      "difficulty_ratio": 15.951666666666666,
+      "llm_used": false,
+      "revisits": 5,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 7510,
+      "difficulty_ratio": 15.441666666666668,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 8169,
+      "difficulty_ratio": 13.615000000000002,
+      "llm_used": false,
+      "revisits": 5,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1556,
+      "difficulty_ratio": 2.5933333333333337,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 4240,
+      "difficulty_ratio": 7.066666666666667,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 250,
+      "difficulty_ratio": 0.4166666666666667,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 506,
+      "difficulty_ratio": 0.3373333333333333,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 22773,
+      "difficulty_ratio": 37.955,
+      "llm_used": false,
+      "revisits": 17,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 2249,
+      "difficulty_ratio": 7.496666666666667,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 4990,
+      "difficulty_ratio": 16.633333333333336,
+      "llm_used": false,
+      "revisits": 5,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 7756,
+      "difficulty_ratio": 12.926666666666668,
+      "llm_used": true,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 254,
+      "difficulty_ratio": 0.8466666666666667,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1751,
+      "difficulty_ratio": 2.9183333333333334,
+      "llm_used": true,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 14694,
+      "difficulty_ratio": 16.326666666666668,
+      "llm_used": false,
+      "revisits": 25,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 37705,
+      "difficulty_ratio": 25.136666666666667,
+      "llm_used": false,
+      "revisits": 11,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 5254,
+      "difficulty_ratio": 8.756666666666666,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 12248,
+      "difficulty_ratio": 40.82666666666667,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 7506,
+      "difficulty_ratio": 12.510000000000002,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1761,
+      "difficulty_ratio": 5.87,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 2999,
+      "difficulty_ratio": 4.998333333333334,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 2461,
+      "difficulty_ratio": 4.101666666666667,
+      "llm_used": false,
+      "revisits": 6,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 9744,
+      "difficulty_ratio": 4.45,
+      "llm_used": false,
+      "revisits": 5,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 4991,
+      "difficulty_ratio": 16.636666666666667,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 6504,
+      "difficulty_ratio": 2.1679999999999997,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 7503,
+      "difficulty_ratio": 2.273636363636364,
+      "llm_used": false,
+      "revisits": 9,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 5993,
+      "difficulty_ratio": 1.1750980392156865,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 26506,
+      "difficulty_ratio": 29.45111111111111,
+      "llm_used": true,
+      "revisits": 12,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 507,
+      "difficulty_ratio": 0.8450000000000001,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 248,
+      "difficulty_ratio": 0.41333333333333333,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 249,
+      "difficulty_ratio": 0.8300000000000001,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 3004,
+      "difficulty_ratio": 5.006666666666667,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 497,
+      "difficulty_ratio": 0.8283333333333334,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 996,
+      "difficulty_ratio": 1.6600000000000001,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 3739,
+      "difficulty_ratio": 3.1158333333333332,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 2003,
+      "difficulty_ratio": 1.669166666666667,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 10016,
+      "difficulty_ratio": 2.2257777777777776,
+      "llm_used": false,
+      "revisits": 7,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 504,
+      "difficulty_ratio": 0.5599999999999999,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1242,
+      "difficulty_ratio": 1.38,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 2507,
+      "difficulty_ratio": 8.356666666666667,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 13991,
+      "difficulty_ratio": 9.327333333333334,
+      "llm_used": true,
+      "revisits": 9,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 750,
+      "difficulty_ratio": 1.25,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 996,
+      "difficulty_ratio": 1.6600000000000001,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 10265,
+      "difficulty_ratio": 34.21666666666667,
+      "llm_used": false,
+      "revisits": 8,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 29000,
+      "difficulty_ratio": 48.333333333333336,
+      "llm_used": true,
+      "revisits": 11,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 497,
+      "difficulty_ratio": 0.5522222222222222,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1015,
+      "difficulty_ratio": 0.3759259259259259,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 249,
+      "difficulty_ratio": 0.41500000000000004,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 18249,
+      "difficulty_ratio": 30.415,
+      "llm_used": false,
+      "revisits": 7,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 3529,
+      "difficulty_ratio": 0.8402380952380952,
+      "llm_used": false,
+      "revisits": 8,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 263,
+      "difficulty_ratio": 0.8766666666666667,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1001,
+      "difficulty_ratio": 3.3366666666666664,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 252,
+      "difficulty_ratio": 0.42000000000000004,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 5983,
+      "difficulty_ratio": 3.9886666666666666,
+      "llm_used": false,
+      "revisits": 7,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 250,
+      "difficulty_ratio": 0.8333333333333334,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 2007,
+      "difficulty_ratio": 2.23,
+      "llm_used": true,
+      "revisits": 5,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 997,
+      "difficulty_ratio": 1.6616666666666666,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 10736,
+      "difficulty_ratio": 17.893333333333334,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 9737,
+      "difficulty_ratio": 16.228333333333335,
+      "llm_used": false,
+      "revisits": 8,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 12998,
+      "difficulty_ratio": 43.32666666666667,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 5500,
+      "difficulty_ratio": 18.333333333333336,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 489,
+      "difficulty_ratio": 1.6300000000000001,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 747,
+      "difficulty_ratio": 2.49,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1001,
+      "difficulty_ratio": 3.3366666666666664,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 504,
+      "difficulty_ratio": 0.8400000000000001,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 5775,
+      "difficulty_ratio": 1.0694444444444444,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 251,
+      "difficulty_ratio": 0.41833333333333333,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 769,
+      "difficulty_ratio": 0.6408333333333334,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 239,
+      "difficulty_ratio": 0.3983333333333333,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 6248,
+      "difficulty_ratio": 2.314074074074074,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 13007,
+      "difficulty_ratio": 10.839166666666667,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1754,
+      "difficulty_ratio": 5.846666666666667,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 987,
+      "difficulty_ratio": 3.29,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 741,
+      "difficulty_ratio": 1.235,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 8508,
+      "difficulty_ratio": 14.18,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 15002,
+      "difficulty_ratio": 50.00666666666667,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 14974,
+      "difficulty_ratio": 2.6270175438596493,
+      "llm_used": false,
+      "revisits": 5,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1499,
+      "difficulty_ratio": 1.6655555555555557,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 246,
+      "difficulty_ratio": 0.8200000000000001,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1499,
+      "difficulty_ratio": 4.996666666666667,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 761,
+      "difficulty_ratio": 1.2683333333333333,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 14743,
+      "difficulty_ratio": 2.8907843137254905,
+      "llm_used": false,
+      "revisits": 11,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 3269,
+      "difficulty_ratio": 10.896666666666668,
+      "llm_used": false,
+      "revisits": 5,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 9576,
+      "difficulty_ratio": 9.085714285714285,
+      "llm_used": false,
+      "revisits": 6,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 4238,
+      "difficulty_ratio": 14.126666666666669,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 5509,
+      "difficulty_ratio": 4.590833333333334,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1251,
+      "difficulty_ratio": 4.17,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 241,
+      "difficulty_ratio": 0.40166666666666667,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 499,
+      "difficulty_ratio": 0.8316666666666667,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 759,
+      "difficulty_ratio": 1.2650000000000001,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1256,
+      "difficulty_ratio": 0.8373333333333334,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 500,
+      "difficulty_ratio": 0.8333333333333334,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 986,
+      "difficulty_ratio": 3.2866666666666666,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 745,
+      "difficulty_ratio": 1.2416666666666667,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 244,
+      "difficulty_ratio": 0.8133333333333334,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 514,
+      "difficulty_ratio": 1.7133333333333334,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 246,
+      "difficulty_ratio": 0.20500000000000002,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1493,
+      "difficulty_ratio": 2.4883333333333337,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 5007,
+      "difficulty_ratio": 1.5172727272727273,
+      "llm_used": false,
+      "revisits": 9,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 753,
+      "difficulty_ratio": 2.5100000000000002,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 30839,
+      "difficulty_ratio": 6.046862745098039,
+      "llm_used": false,
+      "revisits": 11,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 18753,
+      "difficulty_ratio": 5.682727272727273,
+      "llm_used": false,
+      "revisits": 12,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1996,
+      "difficulty_ratio": 2.217777777777778,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 2748,
+      "difficulty_ratio": 0.916,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 44897,
+      "difficulty_ratio": 16.62851851851852,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 8999,
+      "difficulty_ratio": 1.5787719298245615,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 9772,
+      "difficulty_ratio": 1.8096296296296295,
+      "llm_used": false,
+      "revisits": 13,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 37500,
+      "difficulty_ratio": 8.333333333333334,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 15491,
+      "difficulty_ratio": 2.458888888888889,
+      "llm_used": false,
+      "revisits": 6,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 4996,
+      "difficulty_ratio": 1.5139393939393941,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 9502,
+      "difficulty_ratio": 1.8631372549019611,
+      "llm_used": false,
+      "revisits": 5,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 14000,
+      "difficulty_ratio": 2.5925925925925926,
+      "llm_used": false,
+      "revisits": 7,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 12252,
+      "difficulty_ratio": 3.7127272727272733,
+      "llm_used": false,
+      "revisits": 7,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 22999,
+      "difficulty_ratio": 3.6506349206349205,
+      "llm_used": false,
+      "revisits": 10,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 6670,
+      "difficulty_ratio": 1.170175438596491,
+      "llm_used": false,
+      "revisits": 6,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 2996,
+      "difficulty_ratio": 0.3841025641025641,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 2256,
+      "difficulty_ratio": 0.1709090909090909,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 25012,
+      "difficulty_ratio": 2.4521568627450985,
+      "llm_used": false,
+      "revisits": 20,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 754,
+      "difficulty_ratio": 0.8377777777777778,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 39001,
+      "difficulty_ratio": 20.286349206349207,
+      "llm_used": false,
+      "revisits": 11,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1504,
+      "difficulty_ratio": 0.11658914728682171,
+      "llm_used": false,
+      "revisits": 1,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 22620,
+      "difficulty_ratio": 0.6854545454545455,
+      "llm_used": false,
+      "revisits": 8,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 25207,
+      "difficulty_ratio": 2.1544444444444446,
+      "llm_used": false,
+      "revisits": 21,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 16267,
+      "difficulty_ratio": 0.6232567049808428,
+      "llm_used": false,
+      "revisits": 8,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 303985,
+      "difficulty_ratio": 201.16866666666667,
+      "llm_used": false,
+      "revisits": 9,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 27696,
+      "difficulty_ratio": 8.138666666666667,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 42317,
+      "difficulty_ratio": 27.223333333333333,
+      "llm_used": true,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 18500,
+      "difficulty_ratio": 15.668,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 17000,
+      "difficulty_ratio": 1.6944791666666668,
+      "llm_used": false,
+      "revisits": 12,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 67246,
+      "difficulty_ratio": 0.6572619047619047,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 38757,
+      "difficulty_ratio": 15.394583333333332,
+      "llm_used": false,
+      "revisits": 4,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 15991,
+      "difficulty_ratio": 1.0931944444444446,
+      "llm_used": false,
+      "revisits": 8,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 753,
+      "difficulty_ratio": 0.01826388888888889,
+      "llm_used": false,
+      "revisits": 2,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 89335,
+      "difficulty_ratio": 9.0384375,
+      "llm_used": false,
+      "revisits": 16,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 257411,
+      "difficulty_ratio": 17.859583333333333,
+      "llm_used": false,
+      "revisits": 18,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 103748,
+      "difficulty_ratio": 7.188472222222222,
+      "llm_used": false,
+      "revisits": 17,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 32989,
+      "difficulty_ratio": 2.2919444444444443,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1257,
+      "difficulty_ratio": 0.07027777777777777,
+      "llm_used": true,
+      "revisits": 5,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 286049,
+      "difficulty_ratio": 17.74159722222222,
+      "llm_used": false,
+      "revisits": 10,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 145766,
+      "difficulty_ratio": 13.02173611111111,
+      "llm_used": false,
+      "revisits": 8,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 134698,
+      "difficulty_ratio": 13.5390625,
+      "llm_used": false,
+      "revisits": 9,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 273033,
+      "difficulty_ratio": 13.726919191919192,
+      "llm_used": false,
+      "revisits": 58,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 61498,
+      "difficulty_ratio": 3.6805555555555554,
+      "llm_used": false,
+      "revisits": 35,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 7499,
+      "difficulty_ratio": 0.4839333333333334,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 27477,
+      "difficulty_ratio": 1.3753030303030302,
+      "llm_used": true,
+      "revisits": 31,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 15245,
+      "difficulty_ratio": 0.7810416666666666,
+      "llm_used": true,
+      "revisits": 5,
+      "word_count": 0
+    },
+    {
+      "dwell_time": 1502,
+      "difficulty_ratio": 0.05106666666666667,
+      "llm_used": false,
+      "revisits": 3,
+      "word_count": 0
+    }
+  ]
+}

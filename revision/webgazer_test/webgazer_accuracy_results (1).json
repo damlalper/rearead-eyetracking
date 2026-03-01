@@ -1,0 +1,211 @@
+{
+  "meta": {
+    "date": "2026-03-01T09:37:40.786Z",
+    "screen": "1920x869",
+    "method": "WebGazer.js (TFFacemesh + Ridge regression)",
+    "calibration": "9-point, 5 clicks/point",
+    "test_points": 9,
+    "dwell_ms_per_point": 2000,
+    "valid_points": 9
+  },
+  "aggregate": {
+    "mean_error_px": 522,
+    "std_error_px": 247,
+    "p50_px": 626,
+    "p90_px": 818,
+    "mean_error_deg": "15.82",
+    "p50_deg": "18.97",
+    "p90_deg": "24.79"
+  },
+  "per_point": [
+    {
+      "point": 1,
+      "target": {
+        "x": 200,
+        "y": 160
+      },
+      "predicted": {
+        "x": 818,
+        "y": 593
+      },
+      "error": {
+        "x": 618,
+        "y": 433,
+        "euclidean": 754
+      },
+      "std": {
+        "x": 308,
+        "y": 121
+      },
+      "samples": 40
+    },
+    {
+      "point": 2,
+      "target": {
+        "x": 880,
+        "y": 140
+      },
+      "predicted": {
+        "x": 1365,
+        "y": 536
+      },
+      "error": {
+        "x": 485,
+        "y": 396,
+        "euclidean": 626
+      },
+      "std": {
+        "x": 352,
+        "y": 77
+      },
+      "samples": 40
+    },
+    {
+      "point": 3,
+      "target": {
+        "x": 1740,
+        "y": 170
+      },
+      "predicted": {
+        "x": 1790,
+        "y": 341
+      },
+      "error": {
+        "x": 50,
+        "y": 171,
+        "euclidean": 178
+      },
+      "std": {
+        "x": 277,
+        "y": 85
+      },
+      "samples": 40
+    },
+    {
+      "point": 4,
+      "target": {
+        "x": 170,
+        "y": 374.5
+      },
+      "predicted": {
+        "x": 800,
+        "y": 823
+      },
+      "error": {
+        "x": 630,
+        "y": 449,
+        "euclidean": 774
+      },
+      "std": {
+        "x": 237,
+        "y": 106
+      },
+      "samples": 40
+    },
+    {
+      "point": 5,
+      "target": {
+        "x": 1030,
+        "y": 484.5
+      },
+      "predicted": {
+        "x": 1590,
+        "y": 793
+      },
+      "error": {
+        "x": 560,
+        "y": 309,
+        "euclidean": 639
+      },
+      "std": {
+        "x": 241,
+        "y": 82
+      },
+      "samples": 40
+    },
+    {
+      "point": 6,
+      "target": {
+        "x": 1760,
+        "y": 364.5
+      },
+      "predicted": {
+        "x": 1803,
+        "y": 576
+      },
+      "error": {
+        "x": 43,
+        "y": 211,
+        "euclidean": 215
+      },
+      "std": {
+        "x": 117,
+        "y": 70
+      },
+      "samples": 40
+    },
+    {
+      "point": 7,
+      "target": {
+        "x": 190,
+        "y": 709
+      },
+      "predicted": {
+        "x": 988,
+        "y": 888
+      },
+      "error": {
+        "x": 798,
+        "y": 179,
+        "euclidean": 818
+      },
+      "std": {
+        "x": 368,
+        "y": 143
+      },
+      "samples": 40
+    },
+    {
+      "point": 8,
+      "target": {
+        "x": 900,
+        "y": 699
+      },
+      "predicted": {
+        "x": 1385,
+        "y": 808
+      },
+      "error": {
+        "x": 485,
+        "y": 109,
+        "euclidean": 497
+      },
+      "std": {
+        "x": 226,
+        "y": 102
+      },
+      "samples": 40
+    },
+    {
+      "point": 9,
+      "target": {
+        "x": 1750,
+        "y": 719
+      },
+      "predicted": {
+        "x": 1565,
+        "y": 651
+      },
+      "error": {
+        "x": -185,
+        "y": -68,
+        "euclidean": 197
+      },
+      "std": {
+        "x": 265,
+        "y": 92
+      },
+      "samples": 40
+    }
+  ]
+}

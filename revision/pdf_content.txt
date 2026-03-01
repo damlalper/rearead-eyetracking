@@ -1,0 +1,204 @@
+Total pages: 5
+=== PAGE 1 ===
+Decision: Major Revision 
+ 
+Editor Comment: Please read through this entire reviewer decision letter carefully and take all 
+actions seriously in order to avoid any delay in the review process of your revised manuscript 
+submission. You need to upload a ‘Detailed Response to Reviewers’ in the system. 
+ 
+The comments of the 2 reviewers are listed below: 
+ 
+Reviewer 1: 
+ 
+1. General Comments and Suggestions:: 
+- The study presents the design of a low-cost, webcam-based eye-tracking system capable of 
+analyzing reader preferences. Beyond this primary application, the proposed system is 
+structured to be extensible, allowing integration into various analytical frameworks and problem 
+domains. 
+ 
+In the study, the MediaPipe library was employed for iris tracking. To mitigate noise arising from 
+micro-movements, a smoothing approach based on the Kernel Density Estimation (KDE) method 
+was implemented. The extracted eye coordinates were subsequently transmitted to other web-
+based application layers, and satisfactory performance outcomes were achieved. 
+ 
+From a writing perspective, the manuscript is well structured and demonstrates an adequate 
+literature review. Nevertheless, several issues requiring clarification, revision, or further 
+discussion are outlined below: 
+ 
+1. The system operates following a 20-second calibration procedure. After calibration, is the user 
+required to maintain a fixed head position, or is head displacement tolerated? Specifically, how 
+does the system perform when the user shifts laterally from the center of the screen? The 
+robustness of the model against head movement should be clarified and, if possible, 
+quantitatively evaluated. 
+ 
+2. It appears that the KDE method is applied to temporal gaze points. This should be explained 
+more explicitly in the manuscript. Updating Figure 4 to better illustrate this process would 
+improve clarity. Furthermore, does KDE provide a measurable performance advantage 
+compared to simply computing the centroid (mean) of the gaze points? This comparison should 
+be analyzed and discussed. For example, if a computationally simpler averaging algorithm 
+achieves comparable performance while reducing processing time by even a few milliseconds, it 
+may represent a more efficient alternative. 
+ 
+Additionally, while KDE appears to stabilize (fix) the eye center, this may introduce a potential 
+limitation. For instance, could such smoothing mask indicators of attentional instability in 
+individuals with focus-related difficulties? In other words, might this approach inadvertently 
+suppress diagnostically relevant variability? This issue could be addressed in the discussion 
+section. 
+ 
+Formal and typographical suggestions: 
+ 
+=== PAGE 2 ===
+* Page 9, Section 2.8, first paragraph: “Efficient” should be written in lowercase. 
+* Page 10, paragraph 2: “(x_sⓜ, y_s)” — the duplicated “in” should be corrected. Similar minor 
+typographical issues (e.g., “to,” “for,” etc.) should be reviewed. 
+* Table 5: The abbreviation “CSS” should be defined. It does not appear to be introduced earlier 
+in the manuscript. 
+* Pages 12 and 13, Sections 2.12, 2.13, and 2.14: There may be a typographical error in the first 
+sentence beginning with “The Dwell… ” . 
+* Page 14, paragraph 3: “This figure 9… ” may contain a typographical error. 
+* The font sizes of figure captions and in-figure text should be increased to improve readability. 
+* Figure 3 should be provided as a proper graph with enhanced quality, and the embedded text 
+should be resized to ensure legibility. 
+* Section 3.8 title: “Distirbution” should be corrected to “Distribution. ” 
+ 
+ 
+Reviewer 2: 
+ 
+The manuscript presents a practically motivated, end-to-end system for real-time, browser-
+based reading analysis using webcam-derived gaze signals and paragraph-level dwell-time 
+analytics, complemented by optional AI-assisted support (e.g., summarization and text-to-
+speech). The integration of a Chrome extension with a companion service and an interactive UI 
+is a clear strength and suggests potential real-world applicability. However, in its current form 
+the paper does not yet meet publication standards due to critical gaps in ethics/privacy and 
+consent, study protocol transparency, baseline/ablation evidence, metric/ground-truth clarity, 
+and real-time performance reporting. The issues below must be addressed. 
+ 
+1) Ethics, informed consent, and data privacy protocol is missing / inconsistent 
+ 
+The study relies on webcam-based eye tracking and derives gaze-related signals from face/eye 
+landmarks, which may involve biometric and/or personally sensitive data. However, the 
+manuscript states that ethics approval is not required; in its current form, this justification is 
+insufficient and high-risk for a human-subject study. 
+ 
+Missing: A verifiable ethics/consent/privacy and data governance description. 
+ 
+Required revision (actionable): Add a dedicated “Ethics & Privacy” subsection clarifying: 
+ 
+• Informed consent: Was explicit consent obtained? From whom, how, and with what participant 
+information sheet? Was withdrawal possible? 
+ 
+• Data type: Was raw webcam video recorded/stored, or only derived gaze coordinates / feature 
+representations? 
+ 
+• Anonymization: Face images/landmarks may be re-identifiable; specify anonymization/privacy 
+measures (e.g., on-device processing, no raw video storage, pseudonymization). 
+ 
+• Storage & access: Where are data stored, for how long, and who can access them? What 
+security measures are used (encryption/access control)? 
+=== PAGE 3 ===
+ 
+• Third-party transfer: If LLM/TTS or any external APIs are used, does any data leave the device? If 
+yes, what payload is transmitted and how is it protected? If no, explicitly state that all processing 
+is local and no data are transmitted to third parties. 
+ 
+ 
+2) Data collection and participant protocol are not numerically auditable 
+ 
+The manuscript reports session-level outcomes and some aggregate counts, but it does not 
+clearly specify the number of unique participants, inclusion/exclusion criteria, participant 
+profile, device variability, and environmental conditions. 
+ 
+Missing: A reproducible study protocol at the level expected for empirical HCI/AI system papers. 
+ 
+Required revision (actionable): Add a “Data Collection / Study Protocol” summary table 
+including: 
+ 
+• #participants (unique individuals) and minimal demographics summary (e.g., age range) 
+ 
+• #sessions, session duration, reading material type/length, total paragraphs 
+ 
+• device/screen info (resolution, screen size), camera type (built-in/external), basic conditions 
+(approx. distance/lighting) 
+ 
+• calibration procedure (9-point) and whether re-calibration/drift handling was performed 
+ 
+ 
+3) Lack of webcam baseline and ablation studies 
+ 
+While the paper motivates webcam tracking as a low-cost alternative to hardware eye trackers, it 
+does not provide a quantitative comparison against at least one webcam-based baseline 
+method (same family of solutions). A conceptual comparison table alone is not sufficient. 
+ 
+Missing: “Proposed vs. baseline” evidence. 
+ 
+Required revision (actionable): 
+ 
+• Add at least one webcam gaze-tracking baseline (from literature or a reasonable open-source 
+method) and compare under the same protocol: accuracy/stability/latency. 
+ 
+• Provide minimal ablation: 
+ 
+o KDE smoothing on vs. off 
+ 
+o calibration variant (e.g., 5-point vs 9-point, or re-calibration strategy) 
+ 
+o dwell-threshold strategy (single threshold vs. two-threshold/interval logic) 
+ 
+=== PAGE 4 ===
+ 
+4) Metric definitions and ground-truth validation are unclear 
+ 
+The manuscript reports metrics such as “focus score, ” “difficulty ratio, ” and “mean focus score, ” 
+but their formal definitions, computation pipeline, and validation approach are not sufficiently 
+specified. 
+ 
+Missing: Clear metric definitions and reliability reporting. 
+ 
+Required revision (actionable): 
+ 
+• Provide explicit formulae + a worked example for “focus score” and “difficulty ratio. ” 
+ 
+• Report at least dispersion/uncertainty (mean±std or 95% CI) and per-session/per-participant 
+distributions. 
+ 
+• If feasible, add a small-scale reference validation subset (task-based ground truth, 
+comprehension questions, or a controlled validation protocol). At minimum, strengthen “Threats 
+to Validity. ” 
+ 
+ 
+ 
+5) LLM/TTS components are underspecified (model/service, operating mode, and data flow) 
+ 
+The paper includes AI-assisted features such as LLM-based summarization and TTS-based 
+reading, yet it does not specify the LLM/TTS provider/model, whether inference is local or cloud-
+based, what data are transmitted/logged, and what safeguards are in place. 
+ 
+Missing: Technical details and privacy/security implications of LLM/TTS usage. 
+ 
+Required revision (actionable): 
+ 
+• Specify the LLM/TTS provider/model name(s) and whether they run locally or via cloud APIs 
+ 
+• If APIs are used: detail the payload (raw paragraph text? user identifiers?), 
+masking/anonymization, and access controls 
+ 
+• Describe prompt/output constraints and logging/retention policy (if any) 
+ 
+ 
+ 
+6) “Real-time” claim requires end-to-end latency distribution and hardware specification 
+ 
+The reported component-level performance values are helpful; however, for a strong “real-time” 
+claim, the paper should report end-to-end latency (camera → processing → decision → UI update) 
+and the test hardware used. 
+ 
+Missing: End-to-end latency statistics and system configuration. 
+=== PAGE 5 ===
+ 
+Required revision (actionable): 
+ 
+• Report end-to-end latency as a distribution, at minimum p50 and p90 (optionally p99) 
+ 
+• Provide the test machine specifications: CPU model, RAM, and OS (and GPU if used) 
+ 
+• Optionally add CPU utilization / frame drop rate to support real-time robustness 

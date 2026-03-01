@@ -690,11 +690,19 @@ function analyzeReadingBehavior() {
       // ANALYTICS: Update paragraph metrics (use analyticsKey for analytics)
       if (analyticsSession.sessionId) {
         if (!analyticsSession.paragraphMetrics[currentParagraphKey]) {
+          // Get actual word count from paragraph
+          const id = currentParagraphKey.split(':')[1];
+          const el = document.querySelector(`[data-rearead-id="${id}"]`);
+          const readingEl = el ? (el.closest(READING_PARAGRAPH_SELECTOR) || el) : null;
+          const text = readingEl ? readingEl.textContent.trim() : '';
+          const wordCount = text ? text.split(/\s+/).length : 0;
+
           analyticsSession.paragraphMetrics[currentParagraphKey] = {
             dwellTime: 0,
             difficultyRatio: 0,
             revisits: 0,
-            llmUsed: false
+            llmUsed: false,
+            wordCount: wordCount // Store actual word count
           };
         }
         analyticsSession.paragraphMetrics[currentParagraphKey].dwellTime += dwellTime;
@@ -1834,9 +1842,9 @@ function showGestureFeedback(gestureType, message) {
   console.log(`[GESTURE FEEDBACK] ${message}`);
 }
 
-// GESTURE: Handle double blink - click visible Get Help button
+// GESTURE: Handle double blink - open LLM helper for current paragraph
 function handleDoubleBlink() {
-  console.log('[GESTURE] Double blink detected - looking for Get Help button');
+  console.log('[GESTURE] Double blink detected - opening LLM helper');
 
   // Priority 1: Button for current active reading paragraph
   if (currentReadingKey) {
@@ -1846,6 +1854,11 @@ function handleDoubleBlink() {
       helpBtn.click();
       return;
     }
+
+    // No button exists yet, but we have a current paragraph - open LLM helper directly
+    console.log('[GESTURE] No button found, opening LLM helper directly for current paragraph');
+    requestLLMHelp(currentReadingKey);
+    return;
   }
 
   // Priority 2: ANY visible help button (since we enforce singleton now)
@@ -1853,9 +1866,28 @@ function handleDoubleBlink() {
   if (anyBtn) {
      console.log('[GESTURE] Clicking global Get Help button');
      anyBtn.click();
-  } else {
-      console.log('[GESTURE] No Get Help button found to click');
+     return;
   }
+
+  // Priority 3: Try to find current paragraph under gaze
+  if (currentParagraphKey) {
+    console.log('[GESTURE] Using analytics paragraph key as fallback');
+    // Convert analytics key (a:uuid) to reading key (p:uuid) format
+    const id = currentParagraphKey.split(':')[1];
+    const el = document.querySelector(`[data-rearead-id="${id}"]`);
+    if (el) {
+      const readingEl = el.closest(READING_PARAGRAPH_SELECTOR);
+      if (readingEl) {
+        const readingId = getPxIdForElement(readingEl);
+        const readingKey = `p:${readingId}`;
+        console.log('[GESTURE] Opening LLM helper for paragraph under gaze');
+        requestLLMHelp(readingKey);
+        return;
+      }
+    }
+  }
+
+  console.log('[GESTURE] No paragraph found to get help for');
 }
 
 function cleanupAll() {

@@ -70,13 +70,18 @@ function calculateAverageSpeed() {
     const paragraphs = Object.values(session.paragraphMetrics || {});
     if (paragraphs.length === 0) return 0;
 
-    // Estimate words: average paragraph has ~100 words
-    const estimatedWords = paragraphs.length * 100;
+    // Use actual word counts (fallback to 100 words for old data)
+    const totalWords = paragraphs.reduce((sum, p) => sum + (p.wordCount || 100), 0);
     const totalTime = paragraphs.reduce((sum, p) => sum + (p.dwellTime || 0), 0) / 1000 / 60; // minutes
 
-    if (totalTime === 0) return 0;
-    return estimatedWords / totalTime;
-  }).filter(s => s > 0);
+    // Ignore sessions shorter than 5 seconds (likely not real reading)
+    if (totalTime < 0.083) return 0; // 5 seconds = 0.083 minutes
+
+    const wpm = totalWords / totalTime;
+
+    // Cap at 600 WPM (anything higher is likely data error)
+    return Math.min(wpm, 600);
+  }).filter(s => s > 0 && s < 600); // Filter out unrealistic speeds
 
   if (speeds.length === 0) return 0;
   return speeds.reduce((a, b) => a + b, 0) / speeds.length;
@@ -95,7 +100,7 @@ function renderFocusChart() {
 
   // Prepare data: last 7 sessions
   const recentSessions = allSessions.slice(-7);
-  const labels = recentSessions.map((s, i) => `Session ${i + 1}`);
+  const labels = recentSessions.map((_s, i) => `Session ${i + 1}`);
   const focusData = recentSessions.map(session => {
     return (session.avgFocusScore || 0).toFixed(1);
   });
@@ -159,17 +164,22 @@ function renderSpeedChart() {
 
   // Prepare data: last 7 sessions
   const recentSessions = allSessions.slice(-7);
-  const labels = recentSessions.map((s, i) => `Session ${i + 1}`);
+  const labels = recentSessions.map((_s, i) => `Session ${i + 1}`);
   const speedData = recentSessions.map(session => {
     const paragraphs = Object.values(session.paragraphMetrics || {});
     if (paragraphs.length === 0) return 0;
 
-    // Estimate words: average paragraph has ~100 words
-    const estimatedWords = paragraphs.length * 100;
+    // Use actual word counts (fallback to 100 words for old data)
+    const totalWords = paragraphs.reduce((sum, p) => sum + (p.wordCount || 100), 0);
     const totalTime = paragraphs.reduce((sum, p) => sum + (p.dwellTime || 0), 0) / 1000 / 60; // minutes
 
-    if (totalTime === 0) return 0;
-    return Math.round(estimatedWords / totalTime);
+    // Ignore sessions shorter than 5 seconds
+    if (totalTime < 0.083) return 0;
+
+    const wpm = totalWords / totalTime;
+
+    // Cap at 600 WPM to prevent unrealistic values
+    return Math.round(Math.min(wpm, 600));
   });
 
   if (speedChart) {
